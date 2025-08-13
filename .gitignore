@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Docker
+*.pid
+
+# Migrations
+*/migrations/__pycache__/
+*/migrations/*.pyc
+*/migrations/*.pyo
+*/migrations/*.pyd
+*/migrations/*.pdb
+*/migrations/*.log
+
+# Coverage
+htmlcov/
+.coverage
+.tox/
+
+# Others
+*.swp
+*.swo
+.idea/
