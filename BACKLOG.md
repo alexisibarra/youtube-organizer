@@ -27,17 +27,12 @@
 
 ### Frontend (Next.js + TypeScript + Redux Toolkit)
 
-- [x] Set up Next.js app with TypeScript  
+- [x] Set up Next.js app with TypeScript
       _Next.js app scaffolded with TypeScript for modern React development._
-- [x] Install Redux Toolkit and React-Redux  
+- [x] Install Redux Toolkit and React-Redux
       _State management ready for scalable app structure._
 - [ ] Auth flow (Google OAuth2)
-- [ ] UI to:
-      - [ ] List playlists and show contents
-      - [ ] View video metadata
-      - [ ] Create, delete, and update playlists
-      - [ ] Move, add, and remove videos
-      - [ ] Show daily YouTube quota usage
+- [ ] UI to: - [ ] List playlists and show contents - [ ] View video metadata - [ ] Create, delete, and update playlists - [ ] Move, add, and remove videos - [ ] Show daily YouTube quota usage
 - [ ] Responsive design
 - [ ] Error handling and notifications
 
