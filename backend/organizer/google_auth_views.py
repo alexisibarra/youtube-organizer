@@ -1,7 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 import os
 from google_auth_oauthlib.flow import Flow
+from django.contrib.auth.models import User
+from .models import UserSocialToken
 
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -38,6 +41,8 @@ class GoogleAuthInitView(APIView):
         return Response({'auth_url': auth_url})
 
 class GoogleAuthCallbackView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         state = request.session.get('oauth_state')
         flow = Flow.from_client_config(
@@ -56,13 +61,19 @@ class GoogleAuthCallbackView(APIView):
         )
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
-        # Store credentials securely (for now, just return them)
-        # TODO: Save credentials to DB or user session securely
-        return Response({
-            'access_token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes,
-        })
+
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response({'error': 'User not authenticated.'}, status=401)
+
+        UserSocialToken.objects.update_or_create(
+            user=user,
+            defaults={
+                'access_token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'token_expiry': credentials.expiry,
+                'token_scope': ' '.join(credentials.scopes),
+                'token_type': credentials.token_uri,
+            }
+        )
+        return Response({'status': 'Token stored successfully'})
