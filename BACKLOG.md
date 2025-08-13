@@ -32,7 +32,12 @@
 - [x] Install Redux Toolkit and React-Redux
       _State management ready for scalable app structure._
 - [ ] Auth flow (Google OAuth2)
-- [ ] UI to: - [ ] List playlists and show contents - [ ] View video metadata - [ ] Create, delete, and update playlists - [ ] Move, add, and remove videos - [ ] Show daily YouTube quota usage
+- [ ] UI to:
+  - [ ] List playlists and show contents
+  - [ ] View video metadata
+  - [ ] Create, delete, and update playlists
+  - [ ] Move, add, and remove videos
+  - [ ] Show daily YouTube quota usage
 - [ ] Responsive design
 - [ ] Error handling and notifications
 
