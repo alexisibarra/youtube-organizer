@@ -9,7 +9,12 @@
 
 ### Backend (Django + DRF)
 
-- [ ] Set up Django project and DRF
+- [x] Set up Django project and DRF
+      _Django project created, DRF installed, initial app and project structure in place._
+- [x] Add .gitignore and ignore **pycache**
+      _.gitignore added for Python/Django best practices._
+- [x] Run initial migrations
+      _Database initialized with Django's default tables._
 - [ ] Implement OAuth2 authentication with YouTube (Google API)
 - [ ] Endpoints to:
   - [ ] List user playlists (including Watch Later)
@@ -20,16 +25,19 @@
 - [ ] Store user tokens securely
 - [ ] Unit and integration tests
 
-### Frontend (React + Redux Toolkit)
+### Frontend (Next.js + TypeScript + Redux Toolkit)
 
-- [ ] Set up React app with Redux Toolkit
+- [x] Set up Next.js app with TypeScript  
+      _Next.js app scaffolded with TypeScript for modern React development._
+- [x] Install Redux Toolkit and React-Redux  
+      _State management ready for scalable app structure._
 - [ ] Auth flow (Google OAuth2)
 - [ ] UI to:
-  - [ ] List playlists and show contents
-  - [ ] View video metadata
-  - [ ] Create, delete, and update playlists
-  - [ ] Move, add, and remove videos
-  - [ ] Show daily YouTube quota usage
+      - [ ] List playlists and show contents
+      - [ ] View video metadata
+      - [ ] Create, delete, and update playlists
+      - [ ] Move, add, and remove videos
+      - [ ] Show daily YouTube quota usage
 - [ ] Responsive design
 - [ ] Error handling and notifications
 

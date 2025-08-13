@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project is a full-stack application to organize YouTube playlists, using Python/Django (DRF) for the backend and React/Redux for the frontend. The goal is also to learn Python and Django, so every step should include explanations and teaching moments.
+This project is a full-stack application to organize YouTube playlists, using Python/Django (DRF) for the backend and Next.js (with TypeScript and Redux Toolkit) for the frontend. The goal is also to learn Python and Django, so every step should include explanations and teaching moments. For the frontend, use modern React best practices with Next.js, TypeScript, and Redux Toolkit.
 
 ## Copilot Instructions
 
@@ -14,7 +14,7 @@ This project is a full-stack application to organize YouTube playlists, using Py
 - When running commands, explain what they do and why they are needed.
 - If there are errors, help debug and explain the cause and solution.
 - Encourage hands-on experimentation and provide links to official docs when possible.
-- Help with Docker, React, and Redux as needed, but focus teaching on Python/Django.
+- Help with Docker, Next.js, TypeScript, React, and Redux as needed, but focus teaching on Python/Django.
 - If the user asks for a summary or review, provide a recap of what has been learned so far.
 
 ## Workflow
