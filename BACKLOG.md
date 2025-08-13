@@ -43,8 +43,10 @@
 
 ### DevOps
 
-- [ ] Dockerize backend and frontend
-- [ ] docker-compose for local development
+- [x] Dockerize backend and frontend
+      _Dockerfiles created for both backend (Django) and frontend (Next.js)._
+- [x] docker-compose for local development
+      _Single command orchestrates backend, frontend, and database. .env files handled._
 - [ ] Environment variable management (API keys, secrets)
 - [ ] README and setup docs
 
