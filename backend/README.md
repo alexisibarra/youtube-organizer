@@ -1,3 +1,26 @@
+## Authenticating with Google to Access YouTube Data
+
+To access YouTube data for a user, follow these steps:
+
+1. **Log in to the Django backend:**
+   - Go to `/admin/` and log in with your Django user account (or use your frontend login if available).
+
+2. **Start the OAuth2 flow:**
+   - While authenticated, visit `/api/auth/google/` in your browser or API client.
+   - The response will contain an `auth_url`.
+
+3. **Grant Google permissions:**
+   - Open the `auth_url` in your browser.
+   - Log in to your Google account and grant the requested permissions.
+
+4. **Callback and token storage:**
+   - After granting access, Google will redirect you to `/api/oauth2callback/` on your backend.
+   - The backend will securely store your OAuth2 tokens for future API requests.
+
+5. **Access YouTube data:**
+   - You can now use endpoints like `/api/youtube/playlists/` to access your YouTube data.
+
+**Note:** You must be logged in as the same Django user for both the OAuth2 flow and YouTube API requests.
 # YouTube Organizer Backend
 
 This is a Django project using Django Rest Framework, ready for Dockerization. No frontend or database config is included yet.
