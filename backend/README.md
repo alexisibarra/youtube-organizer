@@ -3,17 +3,21 @@
 To access YouTube data for a user, follow these steps:
 
 1. **Log in to the Django backend:**
+
    - Go to `/admin/` and log in with your Django user account (or use your frontend login if available).
 
 2. **Start the OAuth2 flow:**
+
    - While authenticated, visit `/api/auth/google/` in your browser or API client.
    - The response will contain an `auth_url`.
 
 3. **Grant Google permissions:**
+
    - Open the `auth_url` in your browser.
    - Log in to your Google account and grant the requested permissions.
 
 4. **Callback and token storage:**
+
    - After granting access, Google will redirect you to `/api/oauth2callback/` on your backend.
    - The backend will securely store your OAuth2 tokens for future API requests.
 
@@ -21,28 +25,57 @@ To access YouTube data for a user, follow these steps:
    - You can now use endpoints like `/api/youtube/playlists/` to access your YouTube data.
 
 **Note:** You must be logged in as the same Django user for both the OAuth2 flow and YouTube API requests.
-# YouTube Organizer Backend
 
-This is a Django project using Django Rest Framework, ready for Dockerization. No frontend or database config is included yet.
+# Backend Setup: PostgreSQL
 
-## Structure
+This backend is configured to use PostgreSQL.
 
-- `youtube_organizer/` - Django project root
-- `organizer/` - Basic app for future endpoints
-- `requirements.txt` - Python dependencies
+## Local Development
 
-## Setup
+1. Ensure Docker and Docker Compose are installed.
 
-1. Create a virtual environment and install requirements:
-   ```sh
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
-2. Run the server:
-   ```sh
-   python manage.py runserver
-   ```
+2. Copy the provided `env.template` file to `.env` and set the required variables:
+
+```
+cp env.template .env
+```
+
+Edit `.env` and ensure all PostgreSQL and Google OAuth2 variables are set for your environment.
+
+3. Start the services:
+
+```
+docker-compose up --build
+```
+
+4. Run migrations (in a separate terminal):
+
+```
+docker-compose exec backend python manage.py migrate
+```
+
+## Notes
+
+- The database data is persisted in a Docker volume (`postgres_data`).
+- The Django settings use environment variables for all DB credentials.
+- The default user/password is `postgres`/`postgres` for local development.
+
+## Troubleshooting
+
+- If you change the database schema, always re-run migrations.
+- If you need to reset the database, remove the `postgres_data` volume:
+
+```
+docker-compose down -v
+```
+
+---
+
+For any issues, check the logs with:
+
+```
+docker-compose logs
+```
 
 ## Google OAuth2 Setup
 
@@ -54,9 +87,3 @@ To enable YouTube authentication, set up a project in Google Cloud Console:
   - `GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com`
   - `GOOGLE_CLIENT_SECRET=your_client_secret`
   - `GOOGLE_REDIRECT_URI=http://localhost:8000/oauth2callback/`
-
-## Next Steps
-
-- Add database configuration
-- Implement API endpoints in `organizer` app
-- Add Docker support

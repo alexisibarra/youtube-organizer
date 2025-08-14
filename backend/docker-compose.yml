@@ -1,5 +1,15 @@
 version: '3.9'
 services:
+  db:
+    image: postgres:16
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
@@ -9,3 +19,10 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
