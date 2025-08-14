@@ -5,7 +5,7 @@
 # --- Backend targets ---
 
 backend-migrate:
-	cd backend && docker-compose exec backend python manage.py migrate
+	docker-compose exec backend python manage.py migrate
 
 # --- Frontend targets ---
 
