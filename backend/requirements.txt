@@ -3,3 +3,4 @@ djangorestframework>=3.13
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+google-api-python-client

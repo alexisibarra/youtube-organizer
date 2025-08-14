@@ -15,7 +15,8 @@
       _.gitignore added for Python/Django best practices._
 - [x] Run initial migrations
       _Database initialized with Django's default tables._
-- [ ] Implement OAuth2 authentication with YouTube (Google API)
+- [x] Implement OAuth2 authentication with YouTube (Google API)
+      _OAuth2 flow implemented in backend, tokens stored securely per user._
 - [ ] Endpoints to:
   - [ ] List user playlists (including Watch Later)
   - [ ] Retrieve playlist contents and video metadata

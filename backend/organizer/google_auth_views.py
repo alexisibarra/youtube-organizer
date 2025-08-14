@@ -5,6 +5,8 @@ import os
 from google_auth_oauthlib.flow import Flow
 from django.contrib.auth.models import User
 from .models import UserSocialToken
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -77,3 +79,30 @@ class GoogleAuthCallbackView(APIView):
             }
         )
         return Response({'status': 'Token stored successfully'})
+
+class YouTubePlaylistsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            token_obj = UserSocialToken.objects.get(user=user)
+        except UserSocialToken.DoesNotExist:
+            return Response({'error': 'No YouTube token found for user.'}, status=404)
+
+        credentials_dict = {
+            'token': token_obj.access_token,
+            'refresh_token': token_obj.refresh_token,
+            'token_uri': 'https://oauth2.googleapis.com/token',
+            'client_id': GOOGLE_CLIENT_ID,
+            'client_secret': GOOGLE_CLIENT_SECRET,
+            'scopes': SCOPES,
+        }
+        credentials = Credentials(**credentials_dict)
+        youtube = build('youtube', 'v3', credentials=credentials)
+        playlists = youtube.playlists().list(
+            part='snippet,contentDetails',
+            mine=True,
+            maxResults=50
+        ).execute()
+        return Response(playlists)
