@@ -4,9 +4,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 import os
 from google_auth_oauthlib.flow import Flow
 from django.contrib.auth.models import User
+from django.contrib.auth import login
 from .models import UserSocialToken
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+import requests
 
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -42,11 +44,19 @@ class GoogleAuthInitView(APIView):
         request.session['oauth_state'] = state
         return Response({'auth_url': auth_url})
 
+
+# This view handles the OAuth2 callback from Google. It does NOT require the user to be authenticated yet.
+# Instead, it will:
+# 1. Exchange the code for tokens
+# 2. Fetch user info from Google
+# 3. Find or create a Django user
+# 4. Log in the user
+# 5. Store the tokens
 class GoogleAuthCallbackView(APIView):
-    # AllowAny lets unauthenticated users access this endpoint, which is required for OAuth callbacks
     permission_classes = [AllowAny]
 
     def get(self, request):
+        # 1. Exchange the code for tokens
         state = request.session.get('oauth_state')
         flow = Flow.from_client_config(
             {
@@ -65,10 +75,30 @@ class GoogleAuthCallbackView(APIView):
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
 
-        user = request.user
-        if not user or not user.is_authenticated:
-            return Response({'error': 'User not authenticated.'}, status=401)
+        # 2. Fetch user info from Google using the access token
+        userinfo_endpoint = 'https://www.googleapis.com/oauth2/v2/userinfo'
+        userinfo_response = requests.get(
+            userinfo_endpoint,
+            headers={'Authorization': f'Bearer {credentials.token}'}
+        )
+        if userinfo_response.status_code != 200:
+            return Response({'error': 'Failed to fetch user info from Google.'}, status=400)
+        userinfo = userinfo_response.json()
+        email = userinfo.get('email')
+        if not email:
+            return Response({'error': 'No email found in Google user info.'}, status=400)
 
+        # 3. Find or create a Django user
+        user, created = User.objects.get_or_create(username=email, defaults={
+            'email': email,
+            'first_name': userinfo.get('given_name', ''),
+            'last_name': userinfo.get('family_name', ''),
+        })
+
+        # 4. Log in the user (creates a session)
+        login(request, user)
+
+        # 5. Store the tokens in UserSocialToken
         UserSocialToken.objects.update_or_create(
             user=user,
             defaults={
@@ -79,7 +109,9 @@ class GoogleAuthCallbackView(APIView):
                 'token_type': credentials.token_uri,
             }
         )
-        return Response({'status': 'Token stored successfully'})
+
+        # At this point, the user is authenticated in Django and their tokens are saved.
+        return Response({'status': 'User authenticated and token stored successfully', 'email': email})
 
 class YouTubePlaylistsView(APIView):
     permission_classes = [IsAuthenticated]
