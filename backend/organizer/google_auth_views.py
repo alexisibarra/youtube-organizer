@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 import os
 from google_auth_oauthlib.flow import Flow
 from django.contrib.auth.models import User
@@ -17,7 +17,7 @@ SCOPES = [
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:8000/oauth2callback/')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/oauth2callback/')
 
 class GoogleAuthInitView(APIView):
     def get(self, request):
@@ -43,7 +43,8 @@ class GoogleAuthInitView(APIView):
         return Response({'auth_url': auth_url})
 
 class GoogleAuthCallbackView(APIView):
-    permission_classes = [IsAuthenticated]
+    # AllowAny lets unauthenticated users access this endpoint, which is required for OAuth callbacks
+    permission_classes = [AllowAny]
 
     def get(self, request):
         state = request.session.get('oauth_state')
