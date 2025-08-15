@@ -86,4 +86,4 @@ To enable YouTube authentication, set up a project in Google Cloud Console:
 - Add the following environment variables (e.g., in your .env file or shell):
   - `GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com`
   - `GOOGLE_CLIENT_SECRET=your_client_secret`
-  - `GOOGLE_REDIRECT_URI=http://localhost:8000/oauth2callback/`
+  - `GOOGLE_REDIRECT_URI=http://localhost:8000/api/oauth2callback/`
