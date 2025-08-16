@@ -28,9 +28,15 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Application definition
+
+# ---
+# CORS setup for local development
+# ---
+# django-cors-headers allows cross-origin requests from the frontend (e.g., localhost:3000)
+# See: https://github.com/adamchainz/django-cors-headers
 
 INSTALLED_APPS = [
+    'corsheaders',  # must be before rest_framework and your apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # must be at the top, before CommonMiddleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -50,6 +57,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+# CORS_ALLOWED_ORIGINS allows your frontend to access the backend API during development
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+# For more options, see: https://github.com/adamchainz/django-cors-headers
 
 ROOT_URLCONF = 'youtube_organizer.urls'
 
