@@ -1,3 +1,23 @@
+# Environment Variables
+
+To connect the frontend to your backend API, you must set the `NEXT_PUBLIC_BACKEND_URL` environment variable.
+
+1. Copy `env.template` to `.env` in the `frontend/` directory:
+
+   ```sh
+   cp env.template .env
+   ```
+
+2. Edit `.env` and set the correct backend URL (default is `http://localhost:8000` for local development):
+
+   ```env
+   NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+   ```
+
+3. Restart the Next.js dev server after changing `.env`.
+
+**Note:** The `env.template` file documents all required environment variables for the frontend. Always keep it up to date for other developers.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
