@@ -1,5 +1,5 @@
 "use client";
-import { YoutubeTemplate } from "../components/YoutubeTemplate";
+import { VideoPreviewList } from "../components/VideoPreviewList";
 
 export default function Home() {
   // const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -49,6 +49,6 @@ export default function Home() {
   {
     /*  */
   }
-  return <YoutubeTemplate />;
+  return <VideoPreviewList />;
   // </div>
 }

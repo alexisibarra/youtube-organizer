@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { YoutubeHeader } from "@/components/YoutubeHeader";
+import { YoutubeSidebar } from "@/components/YoutubeSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +29,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <YoutubeHeader />
+        <YoutubeSidebar />
         {children}
       </body>
     </html>

@@ -1,11 +1,5 @@
 "use client";
-import React from "react";
-import { YoutubeHeader } from "../components/YoutubeHeader";
-import { YoutubeSidebar } from "../components/YoutubeSidebar";
-import VideoPreview from "./VideoPreview";
-
-// Learning note: All video data is now parametrized in this array.
-const videosMetadata = [
+export const videosMetadata = [
   {
     videoUrl: "https://www.youtube.com/watch?v=n2RNcPRtAiY",
     videoTime: "14:20",
@@ -163,22 +157,3 @@ const videosMetadata = [
     uploadTime: "5 years ago",
   },
 ];
-
-/**
- * YoutubeTemplate renders the list of videos using the VideoPreview component.
- */
-export const YoutubeTemplate = () => {
-  return (
-    <>
-      <YoutubeHeader />
-      <YoutubeSidebar />
-      <main>
-        <section className="video-grid">
-          {videosMetadata.map((video, idx) => (
-            <VideoPreview key={idx} {...video} />
-          ))}
-        </section>
-      </main>
-    </>
-  );
-};
