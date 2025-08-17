@@ -49,3 +49,6 @@ htmlcov/
 *.swp
 *.swo
 .idea/
+
+# Exclude local SSL certificates (security best practice)
+backend/certs/
