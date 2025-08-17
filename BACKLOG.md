@@ -64,6 +64,25 @@
 
 - **Status:** TODO
 
+#### Authentication State Tracking in Frontend Header
+
+**Description:**
+Implement authentication state tracking in the `YoutubeHeader` component (`frontend/src/components/YoutubeHeader.tsx`). Currently, the header always shows the login button. Update the component to track and display the user's authentication state (e.g., show user info or logout button when authenticated, login button when not). Use Redux Toolkit or React Context for state management.
+
+**Why:**
+This is essential for a real-world app to provide a personalized experience and secure access to user-specific features.
+
+**Acceptance Criteria:**
+
+- The header reflects the user's authentication state.
+- Shows login button if not authenticated, user info and logout if authenticated.
+- Uses Redux Toolkit for state management.
+
+**Related File:**
+`frontend/src/components/YoutubeHeader.tsx`
+
+- **Status:** TODO
+
 ### DevOps
 
 - [x] Dockerize backend and frontend
