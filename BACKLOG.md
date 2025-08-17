@@ -42,6 +42,28 @@
 - [ ] Responsive design
 - [ ] Error handling and notifications
 
+#### Dynamic User Profile Image in Header
+
+- **Goal:** Display the current logged in user's profile image in the header (YoutubeHeader.tsx).
+- **Details:**
+
+      - If the user is authenticated, show their profile picture.
+      - If not authenticated, show a default avatar.
+      - Requires authentication integration and passing user data to the header.
+
+- **Status:** TODO
+
+#### Notification System in Header
+
+- **Goal:** Decide whether to implement a notification system in the header (YoutubeHeader.tsx).
+- **Details:**
+
+      - If notifications are desired, make the notification icon and count dynamic, reflecting real user data.
+      - If not, remove the notification section from the header.
+      - Requires a product/design decision and, if implemented, backend/user integration.
+
+- **Status:** TODO
+
 ### DevOps
 
 - [x] Dockerize backend and frontend

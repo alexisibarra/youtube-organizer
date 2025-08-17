@@ -1,0 +1,184 @@
+"use client";
+import React from "react";
+import { YoutubeHeader } from "../components/YoutubeHeader";
+import { YoutubeSidebar } from "../components/YoutubeSidebar";
+import VideoPreview from "./VideoPreview";
+
+// Learning note: All video data is now parametrized in this array.
+const videosMetadata = [
+  {
+    videoUrl: "https://www.youtube.com/watch?v=n2RNcPRtAiY",
+    videoTime: "14:20",
+    thumbnail: "thumbnails/thumbnail-1.webp",
+    channelUrl: "https://www.youtube.com/c/mkbhd",
+    channelImage: "channel-pictures/channel-1.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-1.jpeg",
+    channelName: "Marques Brownlee",
+    channelStats: "16.6M subscribers",
+    title: "Talking Tech and AI with Google CEO Sundar Pichai!",
+    views: "3.4M views",
+    uploadTime: "6 months ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=mP0RAo9SKZk",
+    videoTime: "8:22",
+    thumbnail: "thumbnails/thumbnail-2.webp",
+    channelUrl: "https://www.youtube.com/c/markiplier",
+    channelImage: "channel-pictures/channel-2.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-2.jpeg",
+    channelName: "Markiplier",
+    channelStats: "34.3M subscribers",
+    title: "Try Not to Laugh Challenge #9",
+    views: "19M views",
+    uploadTime: "4 years ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=FgjPQQeTh1w",
+    videoTime: "9:13",
+    thumbnail: "thumbnails/thumbnail-3.webp",
+    channelUrl: "https://www.youtube.com/user/SSSniperWolf",
+    channelImage: "channel-pictures/channel-3.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-3.jpeg",
+    channelName: "SSSniperWolf",
+    channelStats: "33.2M subscribers",
+    title: "Crazy Tik Toks Taken Moments Before DISASTER",
+    views: "12M views",
+    uploadTime: "1 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=094y1Z2wpJg",
+    videoTime: "22:09",
+    thumbnail: "thumbnails/thumbnail-4.webp",
+    channelUrl: "https://www.youtube.com/c/veritasium",
+    channelImage: "channel-pictures/channel-4.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-4.jpeg",
+    channelName: "Veritasium",
+    channelStats: "13.3M subscribers",
+    title: "The Simplest Math Problem No One Can Solve - Collatz Conjecture",
+    views: "18M views",
+    uploadTime: "4 months ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=86CQq3pKSUw",
+    videoTime: "11:17",
+    thumbnail: "thumbnails/thumbnail-5.webp",
+    channelUrl: "https://www.youtube.com/c/CSDojo",
+    channelImage: "channel-pictures/channel-5.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-5.jpeg",
+    channelName: "CS Dojo",
+    channelStats: "1.89M subscribers",
+    title: "Kadane's Algorithm to Maximum Sum Subarray Problem",
+    views: "519K views",
+    uploadTime: "5 years ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=yXWw0_UfSFg",
+    videoTime: "19:59",
+    thumbnail: "thumbnails/thumbnail-6.webp",
+    channelUrl: "https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA",
+    channelImage: "channel-pictures/channel-6.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-6.jpeg",
+    channelName: "MrBeast",
+    channelStats: "129M subscribers",
+    title: "Anything You Can Fit In The Circle I’ll Pay For",
+    views: "141M views",
+    uploadTime: "1 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=fNVa1qMbF9Y",
+    videoTime: "10:13",
+    thumbnail: "thumbnails/thumbnail-7.webp",
+    channelUrl: "https://www.youtube.com/channel/UCP5tjEmvPItGyLhmjdwP7Ww",
+    channelImage: "channel-pictures/channel-7.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-7.jpeg",
+    channelName: "RealLifeLore",
+    channelStats: "6.56M subscribers",
+    title: "Why Planes Don't Fly Over Tibet",
+    views: "6.6M views",
+    uploadTime: "1 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=lFm4EM1juls",
+    videoTime: "7:12",
+    thumbnail: "thumbnails/thumbnail-8.webp",
+    channelUrl: "https://www.youtube.com/channel/UCHAK6CyegY22Zj2GWrcaIxg",
+    channelImage: "channel-pictures/channel-8.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-8.jpeg",
+    channelName: "Tech Vision",
+    channelStats: "798K subscribers",
+    title: "Inside The World's Biggest Passenger Plane",
+    views: "3.7M views",
+    uploadTime: "10 months ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=ixmxOlcrlUc",
+    videoTime: "13:17",
+    thumbnail: "thumbnails/thumbnail-9.webp",
+    channelUrl: "https://www.youtube.com/c/OFFICIALTHENXSTUDIOS",
+    channelImage: "channel-pictures/channel-9.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-9.jpeg",
+    channelName: "ThenX",
+    channelStats: "7.56M subscribers",
+    title: "The SECRET to Super Human STRENGTH",
+    views: "20M views",
+    uploadTime: "3 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=R2vXbFp5C9o",
+    videoTime: "7:53",
+    thumbnail: "thumbnails/thumbnail-10.webp",
+    channelUrl: "https://www.youtube.com/user/businessinsider",
+    channelImage: "channel-pictures/channel-10.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-10.jpeg",
+    channelName: "Business Insider",
+    channelStats: "7.36M subscribers",
+    title: "How The World's Largest Cruise Ship Makes 30,000 Meals Every Day",
+    views: "14M views",
+    uploadTime: "1 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=0nZuYyXET3s",
+    videoTime: "4:10",
+    thumbnail: "thumbnails/thumbnail-11.webp",
+    channelUrl: "https://www.youtube.com/c/Destinationtips",
+    channelImage: "channel-pictures/channel-11.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-11.jpeg",
+    channelName: "Destination Tips",
+    channelStats: "279K subscribers",
+    title: "Dubai's Crazy Underwater Train and Other Things #Only in Dubai",
+    views: "3M views",
+    uploadTime: "1 year ago",
+  },
+  {
+    videoUrl: "https://www.youtube.com/watch?v=9iMGFqMmUFs",
+    videoTime: "4:51",
+    thumbnail: "thumbnails/thumbnail-12.webp",
+    channelUrl: "https://www.youtube.com/teded",
+    channelImage: "channel-pictures/channel-12.jpeg",
+    channelTooltipImage: "/channel-pictures/channel-12.jpeg",
+    channelName: "TED-Ed",
+    channelStats: "18.1M subscribers",
+    title: "What would happen if you didn’t drink water? - Mia Nacamulli",
+    views: "12M views",
+    uploadTime: "5 years ago",
+  },
+];
+
+/**
+ * YoutubeTemplate renders the list of videos using the VideoPreview component.
+ */
+export const YoutubeTemplate = () => {
+  return (
+    <>
+      <YoutubeHeader />
+      <YoutubeSidebar />
+      <main>
+        <section className="video-grid">
+          {videosMetadata.map((video, idx) => (
+            <VideoPreview key={idx} {...video} />
+          ))}
+        </section>
+      </main>
+    </>
+  );
+};
