@@ -3,7 +3,39 @@
 import Image from "next/image";
 import { normalizeSrc } from "./utils/normalizeSrc";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+const handleGoogleLogin = async () => {
+  try {
+    // Call the backend endpoint that returns the Google OAuth2 URL
+    const res = await fetch(`${BACKEND_URL}/api/auth/google/`);
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch auth URL");
+    }
+
+    const data = await res.json();
+
+    if (!data.auth_url) throw new Error("No auth_url in response");
+
+    // Redirect the user to the Google OAuth2 URL
+    window.location.href = data.auth_url;
+  } catch (err) {
+    console.error({ err });
+
+    // Optionally, show an error to the user
+    alert(
+      "Error starting authentication: " +
+        (err instanceof Error ? err.message : String(err))
+    );
+  }
+};
+
 export const YoutubeHeader = () => {
+  // TODO: Implement authentication state tracking
+  // In a real app, you would use Redux or React Context to track if the user is authenticated.
+  // For now, we'll just always show the login button for demonstration.
+
   return (
     <header className="header">
       <div className="left-section">
@@ -82,32 +114,36 @@ export const YoutubeHeader = () => {
             className="notifications-icon"
             src={normalizeSrc("icons/notifications.svg")}
           />
-          {/*
-            TODO: Decide if we want a notification system.
-            If so, make this section dynamic to reflect the user's real notification count and details.
-            If not, consider removing this section entirely.
-            This will require a product/design decision and, if kept, integration with backend/user data.
-          */}
           <div className="notifications-count">3</div>
-
           <div className="tooltip">Notifications</div>
         </div>
 
-        {/*
-          TODO: make this dynamic
-          We want to show a dynamic image here that reflects the current logged in user.
-          In the future, this should display the user's profile picture if authenticated,
-          or a default avatar if not logged in. This will require integrating authentication
-          and passing user data to the header component.
-        */}
-        <Image
-          height={32}
-          width={32}
-          alt="current user picture"
-          className="current-user-picture-icon"
-          src={normalizeSrc("channel-pictures/my-channel.jpg")}
-        />
+        <div className="profile-picture-container">
+          <Image
+            height={32}
+            width={32}
+            alt="current user picture"
+            className="current-user-picture-icon"
+            src={normalizeSrc("channel-pictures/my-channel.jpg")}
+          />
+        </div>
+
+        {/* --- AUTH BUTTON --- */}
+        <div style={{ marginLeft: "auto", paddingRight: 16 }}>
+          <button
+            onClick={handleGoogleLogin}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mb-4"
+          >
+            <img
+              src="/icons/google.svg"
+              alt="Google"
+              style={{ width: 20, height: 20, marginRight: 8 }}
+            />
+            Sign in with Google
+          </button>
+        </div>
       </div>
     </header>
   );
 };
+// End of YoutubeHeader component
