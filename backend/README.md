@@ -86,4 +86,26 @@ To enable YouTube authentication, set up a project in Google Cloud Console:
 - Add the following environment variables (e.g., in your .env file or shell):
   - `GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com`
   - `GOOGLE_CLIENT_SECRET=your_client_secret`
-  - `GOOGLE_REDIRECT_URI=http://localhost:8000/api/oauth2callback/`
+  - `GOOGLE_REDIRECT_URI=https://localhost:8000/api/oauth2callback/`
+
+## SSL Certificates for Local Development and Deployment
+
+For OAuth2 and secure cookie handling, the backend must be served over HTTPS, even in local development. This requires SSL certificates:
+
+- **Local development:** Use self-signed certificates (see below).
+- **Production/deployment:** Use certificates from a trusted Certificate Authority (e.g., Let's Encrypt).
+
+### Generating Self-Signed Certificates for Local Development
+
+Run the following script from the project root:
+
+```sh
+sh generate-dev-cert.sh
+```
+
+This will create `localhost.crt` and `localhost.key` in `backend/certs/`. These files are excluded from git for security.
+
+### Deployment Note
+
+- For production, replace the self-signed certs with valid SSL certificates and update your deployment configuration to use them.
+- Never commit private keys or certificates to version control.

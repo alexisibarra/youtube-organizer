@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'organizer',
+    'django_extensions',  # Enables runserver_plus and other dev tools
 ]
 
 MIDDLEWARE = [
@@ -57,10 +58,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-# CORS_ALLOWED_ORIGINS allows your frontend to access the backend API during development
+
+# --- AUTH FLOW LEARNING NOTE ---
+# To support OAuth2 and session cookies across localhost ports, we need to:
+# 1. Allow credentials in CORS (cookies, authorization headers)
+# 2. Set cookies to SameSite=None and Secure (required for cross-site cookies)
+# 3. Use HTTPS in production (for Secure cookies)
+#
+# See: https://adamj.eu/tech/2020/02/18/cors-cross-site-cookies-django/
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://localhost:3000",
 ]
+CORS_ALLOW_CREDENTIALS = True  # Allow cookies to be sent cross-origin
+
+# Session and CSRF cookie settings for cross-origin OAuth2
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
 
 # For more options, see: https://github.com/adamchainz/django-cors-headers
 
