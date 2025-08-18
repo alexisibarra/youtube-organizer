@@ -22,7 +22,7 @@ const handleGoogleLogin = async () => {
     // Redirect the user to the Google OAuth2 URL
     window.location.href = data.auth_url;
   } catch (err) {
-    console.error({ err });
+    console.error(err);
 
     // Optionally, show an error to the user
     alert(
