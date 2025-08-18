@@ -115,7 +115,7 @@ export const videosMetadata = [
     channelStats: "7.56M subscribers",
     title: "The SECRET to Super Human STRENGTH",
     views: "20M views",
-    uploadTime: "3 year ago",
+    uploadTime: "3 years ago",
   },
   {
     videoUrl: "https://www.youtube.com/watch?v=R2vXbFp5C9o",
