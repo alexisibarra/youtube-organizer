@@ -1,3 +1,10 @@
+# --- SimpleJWT Token Lifetime ---
+# Set access token to expire in 1 day (24 hours)
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # You can also set REFRESH_TOKEN_LIFETIME if needed
+}
 """
 Django settings for youtube_organizer project.
 
@@ -52,6 +59,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # must be at the top, before CommonMiddleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # --- JWT Cookie Middleware: enables DRF SimpleJWT to read JWT from HttpOnly cookie ---
+    'youtube_organizer.middleware.JWTAuthCookieMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -156,3 +165,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- DRF SimpleJWT configuration ---
+# Learning note: This configures Django REST Framework to use JWTs for authentication.
+# See: https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}

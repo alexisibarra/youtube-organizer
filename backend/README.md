@@ -87,6 +87,17 @@ To enable YouTube authentication, set up a project in Google Cloud Console:
   - `GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com`
   - `GOOGLE_CLIENT_SECRET=your_client_secret`
   - `GOOGLE_REDIRECT_URI=https://localhost:8000/api/oauth2callback/`
+  - `FRONTEND_AUTH_CALLBACK_URL=https://localhost:3000/auth/callback` # URL to which the backend will redirect after successful OAuth2 login, with the JWT token as a query param
+
+### How FRONTEND_AUTH_CALLBACK_URL Works
+
+After a successful Google OAuth2 login, the backend will generate a JWT for the user and redirect to the URL specified in `FRONTEND_AUTH_CALLBACK_URL`, appending the token as a query parameter:
+
+```
+https://localhost:3000/auth/callback?token=YOUR_JWT_TOKEN
+```
+
+The frontend should handle this route, extract the token, and store it for future authenticated API requests.
 
 ## SSL Certificates for Local Development and Deployment
 
