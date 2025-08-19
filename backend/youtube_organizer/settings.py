@@ -1,10 +1,3 @@
-# --- SimpleJWT Token Lifetime ---
-# Set access token to expire in 1 day (24 hours)
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    # You can also set REFRESH_TOKEN_LIFETIME if needed
-}
 """
 Django settings for youtube_organizer project.
 
@@ -16,6 +9,14 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
+# --- SimpleJWT Token Lifetime ---
+# Set access token to expire in 1 day (24 hours)
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # You can also set REFRESH_TOKEN_LIFETIME if needed
+}
 
 from pathlib import Path
 
