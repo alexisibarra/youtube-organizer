@@ -42,6 +42,47 @@
 - [ ] Responsive design
 - [ ] Error handling and notifications
 
+#### Dynamic User Profile Image in Header
+
+- **Goal:** Display the current logged in user's profile image in the header (YoutubeHeader.tsx).
+- **Details:**
+
+      - If the user is authenticated, show their profile picture.
+      - If not authenticated, show a default avatar.
+      - Requires authentication integration and passing user data to the header.
+
+- **Status:** TODO
+
+#### Notification System in Header
+
+- **Goal:** Decide whether to implement a notification system in the header (YoutubeHeader.tsx).
+- **Details:**
+
+      - If notifications are desired, make the notification icon and count dynamic, reflecting real user data.
+      - If not, remove the notification section from the header.
+      - Requires a product/design decision and, if implemented, backend/user integration.
+
+- **Status:** TODO
+
+#### Authentication State Tracking in Frontend Header
+
+**Description:**
+Implement authentication state tracking in the `YoutubeHeader` component (`frontend/src/components/YoutubeHeader.tsx`). Currently, the header always shows the login button. Update the component to track and display the user's authentication state (e.g., show user info or logout button when authenticated, login button when not). Use Redux Toolkit or React Context for state management.
+
+**Why:**
+This is essential for a real-world app to provide a personalized experience and secure access to user-specific features.
+
+**Acceptance Criteria:**
+
+- The header reflects the user's authentication state.
+- Shows login button if not authenticated, user info and logout if authenticated.
+- Uses Redux Toolkit for state management.
+
+**Related File:**
+`frontend/src/components/YoutubeHeader.tsx`
+
+- **Status:** TODO
+
 ### DevOps
 
 - [x] Dockerize backend and frontend

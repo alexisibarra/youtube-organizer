@@ -1,3 +1,4 @@
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -9,6 +10,9 @@ from .models import UserSocialToken
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 import requests
+# JWT imports
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import redirect
 
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.readonly',
@@ -19,7 +23,7 @@ SCOPES = [
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/oauth2callback/')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://localhost:8000/api/oauth2callback/')
 
 class GoogleAuthInitView(APIView):
     def get(self, request):
@@ -89,11 +93,16 @@ class GoogleAuthCallbackView(APIView):
             return Response({'error': 'No email found in Google user info.'}, status=400)
 
         # 3. Find or create a Django user
+
+        # Store profile picture in session for now (or extend User model for persistent storage)
+        profile_picture = userinfo.get('picture')
         user, created = User.objects.get_or_create(username=email, defaults={
             'email': email,
             'first_name': userinfo.get('given_name', ''),
             'last_name': userinfo.get('family_name', ''),
         })
+        # Save profile picture in session (for demo; for production, extend User model)
+        request.session['profile_picture'] = profile_picture
 
         # 4. Log in the user (creates a session)
         login(request, user)
@@ -110,8 +119,24 @@ class GoogleAuthCallbackView(APIView):
             }
         )
 
-        # At this point, the user is authenticated in Django and their tokens are saved.
-        return Response({'status': 'User authenticated and token stored successfully', 'email': email})
+        # 6. Generate a JWT for the user
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        # 7. Set the JWT as an HttpOnly, Secure cookie and redirect to the frontend
+        # Learning note: HttpOnly cookies are not accessible via JavaScript, improving security.
+        frontend_url = os.environ.get('FRONTEND_AUTH_CALLBACK_URL', 'https://localhost:3000/auth/callback')
+        response = redirect(frontend_url)
+        # Set the cookie: HttpOnly, Secure, SameSite=None for cross-site usage
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite='None',
+            max_age=60*60*24,  # 1 day
+        )
+        return response
 
 class YouTubePlaylistsView(APIView):
     permission_classes = [IsAuthenticated]

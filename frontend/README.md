@@ -11,7 +11,7 @@ To connect the frontend to your backend API, you must set the `NEXT_PUBLIC_BACKE
 2. Edit `.env` and set the correct backend URL (default is `http://localhost:8000` for local development):
 
    ```env
-   NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+   NEXT_PUBLIC_BACKEND_URL=https://localhost:8000
    ```
 
 3. Restart the Next.js dev server after changing `.env`.
@@ -54,3 +54,31 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## HTTPS for Local Development
+
+To support secure cookies and OAuth2, the frontend must also run on HTTPS locally.
+
+### Generating a Self-Signed Certificate
+
+Run this from the project root:
+
+```sh
+sh generate-frontend-cert.sh
+```
+
+This will create `localhost.crt` and `localhost.key` in `frontend/certs/`. These are ignored by git.
+
+### Using HTTPS with Next.js
+
+- If running locally (not in Docker), start Next.js with:
+  ```sh
+  next dev --turbo --https --ssl-cert ./certs/localhost.crt --ssl-key ./certs/localhost.key
+  ```
+- If using Docker Compose, update the service to use these certs and pass the right flags to Next.js.
+
+### Deployment Note
+
+- For production, you must use certificates from a trusted Certificate Authority (e.g., Let's Encrypt) instead of self-signed certs.
+- Update your deployment configuration to use the production certs and keys.
+- Never commit private keys or certificates to version control.

@@ -2,8 +2,12 @@ django-cors-headers
 Django>=4.0
 djangorestframework>=3.13
 google-auth
+djangorestframework-simplejwt
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
 psycopg2-binary
 requests
+django-extensions
+Werkzeug
+pyOpenSSL
