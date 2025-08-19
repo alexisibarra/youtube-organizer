@@ -11,8 +11,8 @@ export const VideoPreviewList = () => {
     <>
       <main>
         <section className="video-grid">
-          {videosMetadata.map((video, idx) => (
-            <VideoPreview key={idx} {...video} />
+          {videosMetadata.map((video) => (
+            <VideoPreview key={video.videoUrl} {...video} />
           ))}
         </section>
       </main>
