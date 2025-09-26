@@ -1,5 +1,7 @@
-#!/bin/sh
+#!/bin/bash
+# Script to generate backend SSL certificates
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout backend/certs/localhost.key \
   -out backend/certs/localhost.crt \
   -subj "/CN=localhost"
+echo "Backend certificate generated at backend/certs/localhost.crt and .key"
