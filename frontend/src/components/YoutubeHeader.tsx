@@ -1,7 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { normalizeSrc } from "./utils/normalizeSrc";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faSearch,
+  faMicrophone,
+  faUpload,
+  faBell,
+  faTh,
+  faBars,
+} from "@fortawesome/free-solid-svg-icons";
+import { faYoutube, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useEffect, useState } from "react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -65,81 +74,52 @@ export const YoutubeHeader = () => {
   return (
     <header className="header">
       <div className="left-section">
-        <Image
-          alt="hamburger menu"
-          className="hamburger-logo"
-          src={normalizeSrc("/icons/hamburger-menu.svg")}
-          width={24}
-          height={24}
-        />
+        <FontAwesomeIcon icon={faBars} className="hamburger-logo" size="2x" />
 
-        <Image
-          className="youtube-logo"
-          src={normalizeSrc("/icons/youtube-logo.svg")}
-          alt="YouTube Logo"
-          width={100}
-          height={30}
-        />
+        <FontAwesomeIcon icon={faYoutube} className="text-red-600" size="2x" />
+
+        <h1 className="logo-text font-sans font-bold text-black">
+          YouTube Organizer
+        </h1>
       </div>
 
       <div className="middle-section">
         <input className="search-bar" type="text" placeholder="Search" />
 
         <button className="search-button">
-          <Image
-            height={25}
-            width={25}
-            alt="voice search icon"
-            className="search-icon"
-            src={normalizeSrc("icons/search.svg")}
-          />
+          <span className="search-icon">
+            <FontAwesomeIcon icon={faSearch} size="lg" />
+          </span>
           <div className="tooltip">Search</div>
         </button>
 
         <button className="voice-search-button">
-          <Image
-            height={24}
-            width={24}
-            alt="voice search icon"
-            className="voice-search-icon"
-            src={normalizeSrc("icons/voice-search-icon.svg")}
-          />
-
+          <span className="voice-search-icon">
+            <FontAwesomeIcon icon={faMicrophone} size="lg" />
+          </span>
           <div className="tooltip">Search with your voice</div>
         </button>
       </div>
 
       <div className="right-section">
-        <div className="upload-icon-container">
-          <Image
-            height={24}
-            width={24}
-            alt="upload icon"
-            className="upload-icon"
-            src={normalizeSrc("icons/upload.svg")}
-          />
+        <div className="upload-icon-container mr-3">
+          <span className="upload-icon">
+            <FontAwesomeIcon icon={faUpload} size="lg" />
+          </span>
           <div className="tooltip">Create</div>
         </div>
 
-        <div className="youtube-apps-icon-container">
-          <Image
-            height={24}
-            width={24}
-            alt="youtube apps icon"
-            className="youtube-apps-icon"
-            src={normalizeSrc("icons/youtube-apps.svg")}
-          />
+        <div className="youtube-apps-icon-container mr-3">
+          <span className="youtube-apps-icon">
+            <FontAwesomeIcon icon={faTh} size="lg" />
+          </span>
           <div className="tooltip">Youtube apps</div>
         </div>
 
-        <div className="notifications-icon-container">
-          <Image
-            height={24}
-            width={24}
-            alt="notifications icon"
-            className="notifications-icon"
-            src={normalizeSrc("icons/notifications.svg")}
-          />
+        <div className="notifications-icon-container mr-3">
+          <span className="notifications-icon">
+            <FontAwesomeIcon icon={faBell} size="lg" />
+          </span>
           <div className="notifications-count">3</div>
           <div className="tooltip">Notifications</div>
         </div>
@@ -225,19 +205,15 @@ export const YoutubeHeader = () => {
           </div>
         ) : (
           // Show sign in button if not logged in
-          <div style={{ marginLeft: "auto", paddingRight: 16 }}>
+          <div>
             <button
               onClick={handleGoogleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mb-4"
+              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-1 px-4 rounded shadow mr-3 mb-1"
             >
-              <Image
-                src={normalizeSrc("/icons/google.svg")}
-                alt="Google"
-                width={20}
-                height={20}
-                style={{ marginRight: 8 }}
-              />
-              Sign in with Google
+              <span style={{ marginRight: 8 }}>
+                <FontAwesomeIcon icon={faGoogle} size="lg" />
+              </span>
+              Sign in
             </button>
           </div>
         )}
