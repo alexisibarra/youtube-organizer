@@ -52,9 +52,29 @@ This project uses a **monorepo** structure with two main components:
    ```sh
    cp backend/env.template backend/.env
    cp frontend/env.template frontend/.env
-   # Fill in required values in both .env files
    ```
-3. **Start all services:**
+3. **Generate SSL certificates for local HTTPS:**
+
+   The project uses self-signed certificates for both backend and frontend. Use the unified script:
+
+   ```sh
+   bash bin/generate-all-certs.sh
+   ```
+
+   This will generate certificates for both backend (`backend/certs/`) and frontend (`frontend/certs/`).
+
+   You can also run the individual scripts in `bin/` if needed:
+
+   - `bash bin/generate-backend-cert.sh`
+   - `bash bin/generate-frontend-cert.sh`
+
+   # Fill in required values in both .env files
+
+   ```
+
+   ```
+
+4. **Start all services:**
 
    ```sh
    make up
@@ -62,27 +82,24 @@ This project uses a **monorepo** structure with two main components:
 
    This will build and start the backend, frontend, and database containers.
 
-4. **Run database migrations:**
+5. **Run database migrations:**
 
    ```sh
    make backend-migrate
    ```
 
-5. **Create a Django superuser (optional, for admin access):**
+6. **Create a Django superuser (optional, for admin access):**
 
    ```sh
    make backend-createsuperuser
    ```
 
-6. **Access the app:**
+7. **Access the app:**
    - Frontend: [https://localhost:3000](https://localhost:3000)
    - Backend API: [https://localhost:8000](https://localhost:8000)
 
 ### Useful Commands
 
-- `make up` — Start all services
-- `make backend-migrate` — Run Django migrations
-- `make backend-shell` — Open Django shell
 - `make frontend-dev` — Start frontend in development mode
 
 See the `Makefile` for more commands.
