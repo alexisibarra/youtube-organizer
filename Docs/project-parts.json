@@ -1,0 +1,49 @@
+{
+  "repository_type": "monorepo",
+  "generated": "2026-07-20",
+  "parts": [
+    {
+      "part_id": "frontend",
+      "display_name": "Next.js Web Frontend",
+      "project_type_id": "web",
+      "root_path": "frontend/",
+      "language": "TypeScript",
+      "framework": "Next.js 15.4.6 (App Router) / React 19",
+      "entry_points": ["src/app/layout.tsx", "src/app/page.tsx"],
+      "local_url": "https://localhost:3000",
+      "notes": "Shipped code predates Docs/FRONTEND-STACK.md (authoritative target). Uses legacy fetch/FontAwesome/Tailwind v4/CSS Modules; no tests."
+    },
+    {
+      "part_id": "backend",
+      "display_name": "Django REST API Backend",
+      "project_type_id": "backend",
+      "root_path": "backend/",
+      "language": "Python 3.13",
+      "framework": "Django 5.2 + Django REST Framework",
+      "entry_points": ["youtube_organizer/wsgi.py", "manage.py", "organizer/urls.py"],
+      "local_url": "https://localhost:8000",
+      "database": "PostgreSQL 15",
+      "notes": "Single app 'organizer'. Cookie-based JWT auth via JWTAuthCookieMiddleware. Google OAuth2 + YouTube Data API v3. No tests. DEBUG/SECRET_KEY hardcoded (dev-only)."
+    }
+  ],
+  "integration_points": [
+    {
+      "from": "frontend",
+      "to": "backend",
+      "type": "REST (credentialed HTTPS cookie)",
+      "details": "GET /api/auth/google/, /api/auth/me/, /api/youtube/playlists/, /api/oauth2callback/. CORS origin https://localhost:3000, credentials enabled."
+    },
+    {
+      "from": "backend",
+      "to": "google",
+      "type": "OAuth2 + YouTube Data API v3",
+      "details": "OAuth2 code exchange, userinfo fetch, youtube.playlists().list. Tokens persisted in UserSocialToken."
+    },
+    {
+      "from": "backend",
+      "to": "db",
+      "type": "PostgreSQL (Django ORM / psycopg2)",
+      "details": "auth_user, organizer_usersocialtoken, django_session. Env-driven connection (POSTGRES_*, host=db)."
+    }
+  ]
+}

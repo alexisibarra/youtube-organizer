@@ -1,0 +1,59 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-07-20T15:22:08Z",
+    "last_updated": "2026-07-20T15:22:08Z",
+    "completed": "2026-07-20T15:22:08Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "deep",
+  "project_root": "/Users/alexis/Proyectos/youtube-organizer",
+  "project_knowledge": "/Users/alexis/Proyectos/youtube-organizer/docs",
+  "repository_type": "monorepo",
+  "project_types": [
+    { "part_id": "frontend", "project_type_id": "web", "display_name": "Next.js Web Frontend" },
+    { "part_id": "backend", "project_type_id": "backend", "display_name": "Django REST API Backend" }
+  ],
+  "completed_steps": [
+    { "step": "step_1", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Classified as monorepo with 2 parts (frontend=web, backend=backend)" },
+    { "step": "step_2", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Found existing docs: README.md, backend/README.md, frontend/README.md, Docs/FRONTEND-STACK.md, Docs/CI-AND-GITHUB-GATES.md, BACKLOG.md, _bmad-output/project-context.md" },
+    { "step": "step_3", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Tech stack: Next.js 15.4.6/React 19 (frontend), Django 5.2 + DRF (backend)" },
+    { "step": "step_4", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Conditional analysis: 4 API endpoints, 1 data model, 8 UI components" },
+    { "step": "step_5", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Source tree documented" },
+    { "step": "step_6", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Dev/deployment guides written" },
+    { "step": "step_7", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Integration architecture documented (1 REST integration point)" },
+    { "step": "step_8", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Architecture docs written for 2 parts" },
+    { "step": "step_9", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "All supporting docs written" },
+    { "step": "step_10", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Master index generated" },
+    { "step": "step_11", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Validation and review complete" },
+    { "step": "step_12", "status": "completed", "timestamp": "2026-07-20T15:22:08Z", "summary": "Workflow complete" }
+  ],
+  "current_step": "completed",
+  "findings": {
+    "project_classification": "monorepo, 2 parts (Next.js web frontend + Django REST backend), Google OAuth2 + YouTube Data API",
+    "technology_stack": {
+      "frontend": "Next.js 15.4.6 on React 19 / TypeScript (App Router)",
+      "backend": "Django 5.2 + DRF on Python 3.13, PostgreSQL 15"
+    },
+    "api_count": 4,
+    "table_count": 1,
+    "component_count": 8,
+    "integration_points": 1
+  },
+  "outputs_generated": [
+    "project-scan-report.json",
+    "index.md",
+    "project-overview.md",
+    "source-tree-analysis.md",
+    "architecture-frontend.md",
+    "architecture-backend.md",
+    "api-contracts-backend.md",
+    "data-models-backend.md",
+    "component-inventory-frontend.md",
+    "development-guide.md",
+    "deployment-guide.md",
+    "integration-architecture.md",
+    "project-parts.json"
+  ],
+  "resume_instructions": "Workflow complete. To update, re-run /bmad-document-project and choose Re-scan."
+}
