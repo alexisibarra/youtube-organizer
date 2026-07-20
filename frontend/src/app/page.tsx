@@ -1,6 +1,7 @@
 "use client";
-import { VideoPreviewList } from "../components/VideoPreviewList";
+
+import PlaylistsPage from "./PlaylistsPage";
 
 export default function Home() {
-  return <VideoPreviewList />;
+  return <PlaylistsPage />;
 }

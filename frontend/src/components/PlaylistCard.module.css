@@ -1,0 +1,46 @@
+/* PlaylistCard.module.css */
+.card {
+  display: flex;
+  background: #181818;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  overflow: hidden;
+  width: 420px;
+  min-height: 160px;
+  margin-bottom: 2rem;
+}
+.thumbnail {
+  width: 180px;
+  height: 160px;
+  object-fit: cover;
+  background: #222;
+}
+.info {
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+.title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+.meta {
+  font-size: 0.95rem;
+  color: #aaa;
+  margin-bottom: 0.2rem;
+}
+.link {
+  color: #3ea6ff;
+  font-size: 1rem;
+  text-decoration: none;
+  margin-top: 0.7rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.link:hover {
+  color: #1e8fff;
+}
