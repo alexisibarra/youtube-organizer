@@ -1,0 +1,77 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+
+# Required GitHub Secrets per environment:
+#   - DEPLOY_SSH_KEY: Private SSH key for server authentication
+#   - DEPLOY_SSH_HOST: Server hostname or IP address
+#   - DEPLOY_SSH_USER: SSH username (e.g., deploy)
+#   - DEPLOY_APP_PATH: Absolute path to accountr directory on server (e.g., /home/deploy/accountr)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Linux server
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} << 'EOF'
+            set -e
+            echo "Starting deployment..."
+            cd ${{ secrets.DEPLOY_APP_PATH }}
+
+            echo "Pulling latest Docker images..."
+            docker compose -f docker-compose.prod.yml pull
+
+            echo "Running database migrations..."
+            docker compose -f docker-compose.prod.yml run --rm backend pnpm exec nx run backend:prisma-migrate deploy
+
+            echo "Starting containers..."
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "Deployment completed successfully!"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          echo "Checking service health..."
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} << 'EOF'
+            cd ${{ secrets.DEPLOY_APP_PATH }}
+            echo "Container status:"
+            docker compose -f docker-compose.prod.yml ps
+            echo "Logs from last 20 lines:"
+            docker compose -f docker-compose.prod.yml logs --tail=20
+          EOF
+
+      - name: Cleanup SSH key
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -f ~/.ssh/known_hosts
