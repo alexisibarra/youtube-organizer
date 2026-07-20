@@ -25,12 +25,14 @@
 - [ ] Store user tokens securely
 - [ ] Unit and integration tests
 
-### Frontend (Next.js + TypeScript + Redux Toolkit)
+### Frontend (Next.js + TypeScript)
+
+> Stack is governed by `Docs/FRONTEND-STACK.md` (authoritative): server state via
+> `@tanstack/react-query` + `axios` — **no Redux / Zustand / SWR**.
 
 - [x] Set up Next.js app with TypeScript
       _Next.js app scaffolded with TypeScript for modern React development._
-- [x] Install Redux Toolkit and React-Redux
-      _State management ready for scalable app structure._
+- [ ] Set up server-state layer with @tanstack/react-query + axios (per Docs/FRONTEND-STACK.md)
 - [ ] Auth flow (Google OAuth2)
 - [ ] UI to:
   - [ ] List playlists and show contents
@@ -90,3 +92,30 @@ This is essential for a real-world app to provide a personalized experience and 
       _Single command orchestrates backend, frontend, and database. .env files handled._
 - [ ] Environment variable management (API keys, secrets)
 - [ ] README and setup docs
+
+#### Adapt CI/CD & PR Template to This Project's Architecture
+
+**Description:**
+`.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, and `.github/pull_request_template.md`
+were mirrored verbatim from the Accountr project and do not fit this repo. Rewrite them to match
+youtube-organizer's actual stack (npm + Next.js frontend, Django backend) per
+`Docs/CI-AND-GITHUB-GATES.md`.
+
+**Why:**
+The files are unadapted placeholders — the pipeline won't run correctly against this repo (wrong
+paths, wrong tooling, Accountr-specific deploy target).
+
+**Acceptance Criteria:**
+
+- CI triggers on this repo's real paths (`frontend/**`, `backend/**`, `package-lock.json`, `requirements.txt`) — not `apps/**`/`libs/**`/`nx.json`/`pnpm-lock.yaml`.
+- Replace Nx + pnpm + Prisma commands with npm (`next build`) and Django (`manage.py migrate`/`makemigrations`).
+- `test` job uses Django migrations + this repo's env vars (`POSTGRES_*`, `SECRET_KEY`, Google OAuth) against a `postgres:15` service; keep the 70% coverage gate.
+- `deploy.yml` retargets `DEPLOY_APP_PATH` and its compose file to this project (add `docker-compose.prod.yml` — none exists yet).
+- PR template drops Accountr-specific reviewer items (Prisma DTOs, `HttpException` filters); keeps money-as-string, 70% coverage, tests-map-to-acceptance-criteria.
+- Add `.githooks/pre-push` + document `git config core.hooksPath .githooks`.
+
+**Related Files:**
+`.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `.github/pull_request_template.md`,
+`Docs/CI-AND-GITHUB-GATES.md`
+
+- **Status:** TODO
