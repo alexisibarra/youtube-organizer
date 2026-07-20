@@ -3,7 +3,6 @@
 ## Project Goals
 
 - Organize and manage YouTube playlists and videos
-- Learn Python and Django through hands-on development
 
 ## Features
 
@@ -91,19 +90,3 @@ This is essential for a real-world app to provide a personalized experience and 
       _Single command orchestrates backend, frontend, and database. .env files handled._
 - [ ] Environment variable management (API keys, secrets)
 - [ ] README and setup docs
-
----
-
-## Learning Goals
-
-- Learn Python basics and Django fundamentals
-- Understand REST API design with DRF
-- Practice React and Redux Toolkit
-- Gain experience with Docker and docker-compose
-
----
-
-## Progress Tracking
-
-- Check off items as you complete them
-- Add notes or questions as you go
