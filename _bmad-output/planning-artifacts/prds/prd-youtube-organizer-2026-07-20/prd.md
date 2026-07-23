@@ -1,12 +1,11 @@
 ---
 title: "YouTube Organizer"
-status: draft
+status: final
 created: 2026-07-20
 updated: 2026-07-20
 ---
 
 # PRD: YouTube Organizer
-*Working title — confirm.*
 
 ## 0. Document Purpose
 
@@ -45,10 +44,10 @@ Everyone but Alexis. There is no multi-user, sharing, collaboration, or public-f
 - **UJ-2. Alexis clears his weekly inbox (recurring, ~Sunday).**
   - **Persona + context:** During the week Alexis saves interesting videos to a designated `_Inbox` playlist on YouTube (his new habit, replacing Watch Later). ~100 videos accumulate per week.
   - **Entry state:** Authenticated; opens the app for a triage session on desktop (keyboard) or phone (touch).
-  - **Path:** App imports the `_Inbox` playlist → new videos land in **Uncategorized** → app removes them from the `_Inbox` playlist on YouTube (auto-clear) → Alexis works through Uncategorized, **fast**: multi-selecting videos, bulk-applying tags, setting length/format and evergreen-vs-perishable, discarding junk past-him saved.
-  - **Climax:** Uncategorized is emptied (or meaningfully reduced) without one-video-at-a-time tedium; `_Inbox` on YouTube is clean.
-  - **Resolution:** The week's catch is now organized and findable. `[ASSUMPTION: app may offer tag/attribute *suggestions* he one-click confirms, but never auto-applies.]`
-  - **Edge case:** He doesn't finish in one sitting → Uncategorized persists as a working list he returns to; nothing is lost or force-categorized.
+  - **Path:** App imports the `_Inbox` playlist → new videos land in **Uncategorized** → app removes them from the `_Inbox` playlist on YouTube (crash-safe auto-clear) → Alexis works through Uncategorized, **fast**: multi-selecting videos, bulk-applying tags, marking evergreen-vs-perishable, discarding junk past-him saved.
+  - **Climax:** Uncategorized is meaningfully reduced without one-video-at-a-time tedium; `_Inbox` on YouTube is clean.
+  - **Resolution:** The week's catch is organized and findable. Triage is **incremental** — he stops whenever; whatever he already tagged is browsable, and an unfinished Uncategorized pile never blocks the rest of the app. Optional app *suggestions* (FR-8, Phase 2) can speed this later, but never auto-apply.
+  - **Edge case:** He skips triage for weeks → Uncategorized grows, but browse-by-intent (UJ-3) still works over everything already organized; the pile is a backlog, not a blocker.
 
 - **UJ-3. Alexis finds something to watch for the mood/moment (the payoff).**
   - **Persona + context:** It's a random Tuesday night, or he has a free hour, or he's about to cook.
@@ -80,6 +79,7 @@ Everyone but Alexis. There is no multi-user, sharing, collaboration, or public-f
 - **Playlist** — A hand-built, user-curated, **ordered** collection the user assembles deliberately (e.g. "Guitar Course Vol.1"). Distinct from Tags/facets; how the user *curates sequences*. Distinct from the YouTube playlists that exist only as source/inbox.
 - **Freshness / Shelf-life** — A Video is **Evergreen** (never expires) or **Perishable** (has a watch-by window). The app tracks a Perishable's age and flags it once expired.
 - **Watched** — State auto-set when the user views ≥ a threshold percentage of a Video; shown as a badge. The Video stays in place (not auto-removed).
+- **Availability** — Whether a Video is still playable on YouTube. **Available** by default; **Unavailable** when YouTube no longer serves it (deleted, made private, region-blocked, or removed). Unavailable Videos are flagged for the user to review/prune (their metadata still lives in the Library, but playback is impossible).
 
 ## 4. Features
 
@@ -133,22 +133,25 @@ Alexis can import new videos from the `_Inbox` playlist; they enter the Library 
 - Each imported Video stores, locally: title, **description**, channel, thumbnail, duration, **published/posted date**, and YouTube ID/URL.
 - Each imported Video also records app-side timestamps: **imported date** (when it entered the app) and **source-added date** (when it was added to the source playlist, from the YouTube playlist-item data).
 - Imported Videos appear in Uncategorized until organized.
-- Videos already in the Library are not re-imported as duplicates.
+- **Dedup with tombstones:** a Video already in the Library is not re-imported; a Video the user previously **deleted** leaves a lightweight tombstone (YouTube ID) so it is **not** resurrected on a later import even if it's still sitting in `_Inbox`.
 
-#### FR-6: Auto-clear the `_Inbox` on YouTube after import
-After a Video is imported, the app removes it from the `_Inbox` playlist on YouTube.
+#### FR-6: Auto-clear the `_Inbox` on YouTube after import (crash-safe)
+After a Video's metadata is **committed locally**, the app removes it from the `_Inbox` playlist on YouTube. The ordering is strict — import and persist first, verify, then remove — so the source copy is never destroyed before the app holds its own copy.
 **Consequences (testable):**
-- A Video successfully imported is removed from `_Inbox` on YouTube.
-- A Video that failed to import is **not** removed from `_Inbox`.
+- Removal happens **only after** the Video is durably stored in the Library (import → persist+verify → remove). A crash between steps never loses the only copy.
+- A Video that failed to import (or failed verification) is **not** removed from `_Inbox`.
+- A Video imported but not yet cleared (removal failed) is tracked as a pending-clear **orphan** and **retried on the next sync** — it is not skipped as a duplicate and left stranded in `_Inbox` forever.
 - Removal failures are surfaced, not silent.
 
 #### FR-7: Fast bulk categorization
-Alexis can multi-select Videos in Uncategorized and apply Tags, Length/Format, and Freshness in bulk, and discard junk. Realizes UJ-2.
+Alexis can multi-select Videos in Uncategorized and apply Tags (which carry topic *and* format, e.g. `podcast`) and Freshness in bulk, and discard junk. Realizes UJ-2. (Channel and Length are captured automatically — FR-12 — not set here.)
 **Consequences (testable):**
 - User can select multiple Videos and apply one or more Tags to all at once.
 - User can set Freshness (Evergreen / Perishable + window) on selected Videos.
 - User can discard (delete) selected Videos.
+- **Triage-speed bound:** filing a single Video takes ≤2 interactions; applying a Tag/attribute to a multi-selection is a single action. (Load-bearing for SM-C2.)
 - Desktop supports keyboard-driven triage; mobile supports touch-driven triage (both first-class).
+- **Incremental, not all-or-nothing:** triage never requires emptying Uncategorized in one sitting; partially-triaged state is normal and the rest of the app works fully around it (see §8).
 
 #### FR-8: Categorization suggestions (assistive, never automatic)
 The app may suggest Tags/attributes for a Video, which Alexis confirms or ignores.
@@ -176,12 +179,14 @@ Alexis can create ordered Playlists, add/remove Videos, and reorder them.
 - **Removing a Video from a Playlist only drops that membership — the Video remains in the Library** (and in any other Playlists). It is *not* deleted.
 - A Video that belongs to no Playlist still lives in the Library; if it also has no Tags it appears as Uncategorized.
 
-#### FR-11: Delete a Video from the Library
-Alexis can permanently delete a Video from the Library — the only action that removes a Video from the app entirely.
+#### FR-11: Delete a Video from the Library (guarded, recoverable)
+Alexis can delete a Video from the Library — the only action that removes a Video from the app. Because this is the highest-blast-radius operation in the app, it is guarded and reversible.
 **Consequences (testable):**
-- Deleting a Video removes it from the Library and from every Playlist and Tag it was on.
-- Delete is available both singly and in bulk (the "discard" action in FR-7 is this operation applied during triage).
-- Deletion is app-side only; it does not touch YouTube. `[ASSUMPTION: no undo/trash in MVP — deletion is immediate; revisit if it feels risky.]`
+- Deleting a Video removes it from active views and from every Playlist and Tag it was on.
+- Delete is available singly and in bulk (the "discard" action in FR-7 is this operation applied during triage).
+- **Bulk delete requires an explicit confirmation** showing the count (mirrors the confirmation guarding the *recoverable* playlist delete in FR-4 — the guard must not be weaker for the more destructive action).
+- **Deleted Videos go to a recoverable "Recently deleted" trash** and can be restored for a retention window before permanent purge; leaving a tombstone (FR-5) on permanent purge.
+- Deletion is app-side only; it does not touch YouTube.
 
 #### FR-12: Channel & Length as automatic facets
 Channel and Length are captured automatically and usable as filters.
@@ -247,6 +252,14 @@ The app proactively shows Perishable Videos past their window for bulk review. R
 - From that view Alexis can bulk discard or keep.
 - `[ASSUMPTION: a freshness cue is shown on Video cards; exact form is a UX decision.]`
 
+#### FR-19: Detect & flag Unavailable Videos
+The app detects Videos that are no longer playable on YouTube and marks them Unavailable, so a "sole home" Library doesn't silently fill with dead links. Realizes UJ-4.
+**Consequences (testable):**
+- When a Video can no longer be played (deleted / private / region-blocked / removed), it is marked Unavailable and visibly flagged.
+- Unavailable Videos can be filtered/surfaced for bulk review (keep or discard), alongside expired perishables (FR-18).
+- Attempting to play an Unavailable Video shows a clear message rather than a broken player, and offers to open-in-YouTube or delete.
+- `[ASSUMPTION: availability is checked opportunistically (at play time and/or during sync), not via constant background polling — exact cadence is an engineering decision.]`
+
 ## 5. Non-Goals (Explicit)
 - **Not a YouTube playlist manager.** The app does not aim to create/manage arbitrary playlists *on YouTube* (beyond reading/clearing `_Inbox` and optional migration cleanup). Organization lives in the app.
 - **Not multi-user.** No sharing, collaboration, accounts-for-others, or public surfaces.
@@ -256,19 +269,29 @@ The app proactively shows Perishable Videos past their window for bulk review. R
 
 ## 6. MVP Scope
 
-### 6.1 In Scope
+Scope is **phased**. Phase 1 exists to answer one question: *will Alexis actually use this instead of doomscrolling?* Everything not needed to answer that is Phase 2. Phasing sequences FRs; it deletes none.
+
+### 6.1 Phase 1 — Prove the premise
+The smallest loop that replaces the doomscroll: capture → organize → find → watch.
 - YouTube auth with write scope (FR-1), designate `_Inbox` (FR-2).
-- First-run migration with confirmed optional deletion (FR-3, FR-4).
-- Weekly Inbox import → Uncategorized → auto-clear, with fast bulk categorization (FR-5, FR-6, FR-7).
-- Organization model: Tags, Playlists, delete-from-Library, Channel & Length facets (FR-9–FR-12).
-- Browse by combined facets + date filters + search over title/description/channel/tags (FR-13, FR-14).
+- Inbox import → Uncategorized → crash-safe auto-clear (FR-5, FR-6).
+- Fast bulk categorization: Tags + discard (FR-7); manage Tags (FR-9); Channel & Length auto-facets (FR-12).
+- Delete-from-Library, guarded + recoverable (FR-11).
+- Browse by combined facets + search over title/description/channel/tags (FR-13, FR-14).
 - Embedded playback + open-in-YouTube + auto-Watched (FR-15, FR-16).
-- Freshness/shelf-life + expired-perishable pruning (FR-17, FR-18).
 - Responsive: desktop and mobile web both first-class.
 
-### 6.2 Out of Scope for MVP
-- **Categorization suggestions (FR-8)** — assistive nicety; defer until the manual triage loop is proven. `[NOTE FOR PM: if 100/week triage feels painful even with bulk tools, pull this forward — it's the pressure valve.]`
-- **Native mobile app** — deferred; would only be reconsidered if background playback becomes a hard requirement (it isn't — §10).
+### 6.2 Phase 2 — Curation depth & convenience
+Earned once Phase 1 proves the habit sticks.
+- **First-run migration** of existing YouTube playlists (FR-3, FR-4) — valuable, but not needed to prove the premise; the weekly loop is.
+- **Hand-built Playlists** (FR-10) — curation-sequence nicety on top of facet browsing.
+- **Freshness / shelf-life + perishable pruning** (FR-17, FR-18) and **Unavailable-video detection** (FR-19) — library-health features that matter more as the Library ages.
+- **Date-range time-lapse filters** (the date portion of FR-13) — old-save cleanup; needs history to be useful.
+- **Tag-merge** (part of FR-9) — fights drift that only appears after months of tagging.
+- **Categorization suggestions (FR-8)** — the triage pressure valve. `[NOTE FOR PM: if Phase-1 triage of ~100/week hurts even with bulk tools, pull this forward — it's the release valve, and the reviewers flagged it as the real mitigation for SM-C2.]`
+
+### 6.3 Out of Scope (all phases)
+- **Native mobile app** — reconsidered only if background playback becomes a hard requirement (it isn't — §10).
 - **Background/lock-screen in-app playback** — not supported; covered by open-in-YouTube.
 - **Any multi-user / sharing capability.**
 
@@ -288,7 +311,8 @@ Personal tool — success is behavioral, measured by Alexis's own use.
 - **SM-C2 — Triage effort stays low:** If keeping the library organized starts costing more time than the doomscroll it replaced, that's failure. Counterbalances the manual-categorization design — protect throughput (FR-7).
 
 ## 8. Cross-Cutting NFRs
-- **Triage throughput:** Bulk operations on ~100 items must feel fast (multi-select + bulk apply); no per-video modal gauntlet. This is load-bearing for SM-C2.
+- **Triage throughput (bounded):** Filing a single Video takes **≤2 interactions**; applying a Tag/attribute to a multi-selection is **a single action**. No per-video modal gauntlet. This is load-bearing for SM-C2 — if triage costs more than the doomscroll it replaces, the product has failed.
+- **Incremental by design:** The app must never require Uncategorized to be emptied. A partially-triaged Library is a first-class state — browse, search, and playback all work fully over whatever is already organized, so skipping triage for weeks degrades findability of *new* saves only, never the whole app. Directly answers the "Uncategorized becomes the new pile" risk.
 - **Responsive/both surfaces:** Desktop (keyboard-accelerated triage) and mobile (touch) are both first-class from day one.
 - **YouTube API quota:** All import/clear/delete operations must stay within the app's YouTube Data API daily quota for a single user; batch and minimize write calls. `[ASSUMPTION: single-user volume (~100 videos/week) fits the default 10k-unit/day quota; validate the cost of list+delete per item.]`
 - **Local durability:** Video metadata is stored in the app and must survive removal from YouTube playlists (the app is the sole home post-import).
@@ -297,11 +321,11 @@ Personal tool — success is behavioral, measured by Alexis's own use.
 
 ## 9. Assumptions Index
 *Remaining unconfirmed inferences (several earlier assumptions were confirmed by Alexis and are now stated as fact in the body):*
-- §4.3 FR-8 — Categorization suggestions are a nice-to-have; deferrable past MVP.
+- §4.3 FR-8 — Categorization suggestions are a nice-to-have; deferrable to Phase 2.
 - §4.4 FR-9 — Tag merge is wanted to combat tag drift over time.
-- §4.4 FR-11 — No undo/trash in MVP; deletion is immediate (revisit if it feels risky).
 - §4.6 FR-16 — Watched threshold ≈ 90%.
 - §4.7 FR-18 — Video cards show a freshness cue (exact UX TBD).
+- §4.7 FR-19 — Availability is checked opportunistically (at play time / during sync), not by constant background polling.
 - §8 — Single-user volume (~100 videos/week) fits the default YouTube API daily quota (needs validation).
 
 ## 10. Platform Constraints & Risks
@@ -315,6 +339,10 @@ Personal tool — success is behavioral, measured by Alexis's own use.
 
 ## 11. Open Questions
 1. **Watched → then what, longer term?** Watched videos stay with a badge (FR-16). Do they eventually clutter browse, and should there be an "archive watched" sweep later? (Deferred; revisit after real use.)
-2. **Suggestion engine (FR-8):** if pulled into MVP, what powers suggestions — channel/title heuristics, or the user's own past tagging patterns?
-4. **Quota cost per triage:** measure real API-unit cost of a 100-video import+clear cycle to confirm §8 assumption.
-5. **Migration failure handling:** partial-import behavior and retry (FR-3) — define once the API cost/limits are known.
+2. **Suggestion engine (FR-8):** if pulled forward, what powers suggestions — channel/title heuristics, or the user's own past tagging patterns?
+3. **Quota cost per triage:** measure real API-unit cost of a 100-video import+clear cycle to confirm the §8 assumption.
+4. **Migration failure handling (Phase 2, FR-3):** partial-import behavior and retry — define once API cost/limits are known.
+5. **`_Inbox` disappears:** what happens if the user deletes the designated `_Inbox` playlist on YouTube, or renames/empties it? (Detect and prompt to re-designate — FR-2.)
+6. **Quota exhaustion mid-triage:** if the daily quota is hit partway through a ~100-video import/clear, how does the app degrade — pause and resume next day, partial commit? (Ties to FR-6 orphan handling.)
+7. **Watched accuracy vs. scrubbing:** the ≈90% threshold (FR-16) can be reached by seeking without watching. Acceptable for a personal tool, or should it require contiguous playback? (Deferred — likely fine as-is.)
+8. **Un-filing:** removing the last Tag/Playlist from a Video drops it back into Uncategorized (derived state). Confirm that silent fallback is desired, or whether an explicit "keep, leave untagged" state is needed.
