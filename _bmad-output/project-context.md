@@ -12,6 +12,13 @@ optimized_for_llm: true
 
 _This file contains critical rules and patterns that AI agents must follow when implementing code in this project. Focus on unobvious details that agents might otherwise miss._
 
+> **The architecture spine is binding** (added 2026-07-24):
+> `_bmad-output/planning-artifacts/architecture/architecture-youtube-organizer-2026-07-24/ARCHITECTURE-SPINE.md`
+> holds 20 `AD-n` invariants — layering, the API contract, the sync engine's crash-safety
+> ordering, tag semantics, durability. **It wins over this file and over `Docs/` on any conflict**,
+> because it was decided for this repo rather than mirrored from another. Read it before
+> implementing; cite `AD-n` ids in PRs. Points already reconciled below are marked.
+
 ---
 
 ## Technology Stack & Versions
@@ -24,7 +31,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **Next.js `~16.1.6`** — App Router, RSC, `src/` dir
 - **React `^19`** / react-dom `^19`, **TypeScript strict** (no `any` — use `unknown` + narrowing)
-- **Nx `22.7.5`** monorepo + **pnpm workspaces** (phantom-dep discipline)
+- ⚠️ **No Nx, no pnpm workspaces** (AD-2) — plain `npm` + `package-lock.json`, two trees (`frontend/`, `backend/`)
 - **State/data:** `@tanstack/react-query 5.100.14` (ONLY server-state layer — no Redux/Zustand/SWR) + `axios ^1.16.1`
 - **Forms:** `react-hook-form 7.76.1` (`mode: 'onBlur'` mandatory) + `zod 4.4.3` + `@hookform/resolvers`
 - **Styling:** **Tailwind v3** (`^3.4.19`, NOT v4) + **shadcn/ui** (`src/components/ui/`, never hand-edit) + Radix
@@ -35,9 +42,10 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ### Backend (`/backend`)
 
-- **Python + Django 5.2** (`requirements.txt` pins `Django>=4.0`; codebase is on 5.2)
-- **Django REST Framework `>=3.13`** — endpoints are DRF class-based `APIView`s
-- **djangorestframework-simplejwt** — `ACCESS_TOKEN_LIFETIME = 1 day`
+- **Python 3.13 + Django `6.0.x`** (AD-14) — bump from 5.2; replace the unbounded `Django>=4.0` pin with a bounded one, and pin every requirement
+- **Django REST Framework `>=3.17.0`** — Django 6.0 support landed in 3.17.0. Endpoints are DRF class-based `APIView`s
+- ⚠️ **`djangorestframework-simplejwt` is DROPPED** (AD-14) — last release 5.5.1 (Jul 2025), no Django 6.0 support. Token issue/verify moves to a first-party `organizer/auth/` module over **PyJWT `2.13.0`**, exposed as one custom DRF authentication class that reads the cookie directly
+- **drf-spectacular `0.30.0`** — OpenAPI schema generation feeding the frontend type codegen (AD-3)
 - **PostgreSQL 15** via `psycopg2-binary`
 - **Google OAuth:** `google-auth`, `google-auth-oauthlib`, `google-auth-httplib2`, `google-api-python-client`
 - **django-cors-headers**, **django-extensions** (`runserver_plus`), **Werkzeug**, **pyOpenSSL**
@@ -57,7 +65,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - `@tanstack/react-query` is the ONLY server-state layer. Never introduce Redux/Zustand/SWR,
   and never fetch server data with raw `fetch`/`useEffect` (the legacy `usePlaylists` pattern).
 - All HTTP goes through `axios`. Mock it with `axios-mock-adapter` in tests — never hit a real backend.
-- API request/response shapes come from the shared TS types package — the single source of truth.
+- ⚠️ API types are **generated, not shared-package** (AD-3): DRF serializers → `drf-spectacular` schema → `@hey-api/openapi-ts` → `frontend/src/lib/api/`. Committed, never hand-edited; CI fails on drift. Never hand-write an API type.
 
 **Forms**
 
@@ -92,16 +100,19 @@ export default MyComponent;
 
 **No phantom dependencies**
 
-- pnpm does not hoist transitives: every imported package MUST be a direct dependency,
-  or the webpack production build breaks (the dev server hides this).
+- Every imported package MUST be a direct dependency, or the webpack production build breaks.
+  ⚠️ Under npm (AD-2) hoisting hides this locally — the production-build gate is the only catch.
 
 ### Backend Rules (Django + DRF)
 
 **Auth flow (the tricky part)**
 
-- Auth is JWT-in-HttpOnly-cookie, NOT header-based. `JWTAuthCookieMiddleware`
+- Auth is JWT-in-HttpOnly-cookie, NOT header-based. Don't expect clients to send the header.
+  ⚠️ **The mechanism changes with AD-14:** today `JWTAuthCookieMiddleware`
   (`youtube_organizer/middleware.py`) reads the `access_token` cookie and injects
-  `Authorization: Bearer <token>` before DRF sees the request. Don't expect clients to send the header.
+  `Authorization: Bearer <token>` before DRF. That global request mutation is **retired** along
+  with SimpleJWT — the new custom DRF authentication class reads the cookie itself.
+  **The cookie contract with the frontend is unchanged; only the backend implementation moves.**
 - OAuth2 lives in `organizer/google_auth_views.py`, separate from `views.py`. The callback view
   is `AllowAny` (user isn't authenticated yet); it exchanges the code, upserts a Django `User`,
   logs in, mints JWTs, and stores Google tokens in `UserSocialToken` (OneToOne with User).
@@ -202,8 +213,9 @@ export default MyComponent;
 **Local `pre-push` hook (four-layer gate)**
 
 - Hooks are tracked in `.githooks/` (not `.git/hooks`); activate once per clone: `git config core.hooksPath .githooks`.
-- `pre-push` runs the full pipeline locally and blocks on failure:
-  `nx run-many -t test --coverage && nx run-many -t lint && nx run-many -t build`.
+- ⚠️ `pre-push` currently runs `nx run-many …`, which **cannot work here** (AD-2). Rewrite it to
+  this repo's real commands: `tsc --noEmit`, `npm run lint`, `npm test -- --coverage`,
+  `npm run build`, and `python manage.py test`.
 - Optional `pre-commit` blocks direct commits to `main`/`develop`.
 
 **GitHub Actions CI (`.github/workflows/ci.yml`)**
@@ -277,4 +289,4 @@ export default MyComponent;
 - Update when the stack changes, and retire the "legacy vs. doc" notes once the frontend migration lands.
 - Review periodically for outdated rules.
 
-Last Updated: 2026-07-23
+Last Updated: 2026-07-24 (reconciled against `ARCHITECTURE-SPINE.md`)
