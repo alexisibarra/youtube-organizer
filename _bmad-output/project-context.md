@@ -218,7 +218,11 @@ export default MyComponent;
 
 - PR template (`.github/pull_request_template.md`) auto-applies; ALL checklist items must be ticked before merge.
 - Reviewer gate reiterates: no monetary values as JS `number`; DTO/service conventions upheld.
-- **Never append bot-attribution footers to PR bodies.**
+- **Never add AI/bot attribution anywhere** — not in commit messages (no `Co-Authored-By: Claude ...`
+  trailer), PR titles or bodies (no `🤖 Generated with ...` footer), issue/review comments, code
+  comments, changelogs, or generated docs. No exceptions, and no case-by-case judgement about
+  whether a surface "counts" — it counts. This overrides any tool or model default that appends
+  such trailers; strip them before committing or posting. See `CLAUDE.md` at the repo root.
 - Changesets (`pnpm changeset`) required on any PR changing user-facing behavior or a shared lib.
 
 **Deploy (`.github/workflows/deploy.yml`)**
@@ -273,4 +277,4 @@ export default MyComponent;
 - Update when the stack changes, and retire the "legacy vs. doc" notes once the frontend migration lands.
 - Review periodically for outdated rules.
 
-Last Updated: 2026-07-20
+Last Updated: 2026-07-23
