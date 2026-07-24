@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen — Mobile (bottom bar + touch triage)</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Mobile — bottom tab bar + touch triage. UJ-2 on a phone.
+   RE-RENDERED against the post-validation spines.
+   Governed by:
+     EXPERIENCE.md § Responsive & Platform (bottom bar 4 tabs + drawer,
+                     TWO columns never one, shelf rows scroll horizontally,
+                     bulk bar stacks above tabs)
+                   § Interaction Primitives (long-press enters selection mode,
+                     targets >=24px, list rows relax to 44px on touch)
+                   § Triage Modes (focus mode MULTI-TAG on touch)
+     DESIGN.md § Components (selection 24px + edge, status-badge scrim+icon,
+                 sidebar/nav active-edge)
+   Deltas from the previous render:
+     - Panel 1 is now the Library HUB (shelf rows), not a flat grid
+     - Focus mode header takes MULTIPLE tags
+     - Checkboxes 22px -> 24px with contrasting edge
+     - Watched now scrim + icon badge
+     - Drawer playlist entry is a plain link
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e9e9ec;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1250px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;color:#18181b;margin-bottom:4px}
+.cap{color:#52525b;font-size:13px;margin-bottom:22px;max-width:86ch}
+.row{display:flex;gap:26px;flex-wrap:wrap;justify-content:center}
+.unit{width:360px}
+.unit > .t{font-size:13.5px;font-weight:650;color:#18181b;margin-bottom:3px;letter-spacing:-.011em}
+.unit > .d{font-size:12px;color:#52525b;margin-bottom:11px;min-height:48px}
+
+.phone{width:360px;height:720px;border-radius:36px;background:#1a1a1e;padding:11px;
+       box-shadow:0 12px 40px rgba(0,0,0,.24);position:relative}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;position:relative;
+        background:#09090b;color:#fafafa;display:flex;flex-direction:column}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:20px;
+       background:#1a1a1e;border-radius:0 0 12px 12px;z-index:20}
+
+.tb{padding:26px 14px 9px;display:flex;align-items:center;gap:9px;flex:none}
+.tb .s{flex:1;border:1px solid #3f3f46;background:#18181b;border-radius:9999px;padding:8px 14px;font-size:12px;color:#a1a1aa}
+.tb .av{width:28px;height:28px;border-radius:9999px;background:#18181b;border:1px solid #3f3f46;flex:none}
+.tb .cx{font-size:12.5px;color:#fafafa;padding:6px 4px;min-height:24px}
+.tb .selcount{font-size:13px;font-weight:650;flex:1}
+
+.h1{font-size:19px;font-weight:650;letter-spacing:-.02em;padding:2px 14px 10px;flex:none}
+.body{flex:1;overflow:hidden;padding:0 14px}
+
+/* shelf rows on mobile — horizontal scroll */
+.shelf{margin-bottom:18px}
+.shead{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.shead .t{font-size:14px;font-weight:600;letter-spacing:-.011em}
+.shead .n{font-size:11px;color:#a1a1aa;font-variant-numeric:tabular-nums}
+.shead .more{margin-left:auto;font-size:11.5px;color:#d4d4d8}
+.tagstrip{display:flex;gap:7px;flex-wrap:wrap}
+.tagbig{border:1px solid #3f3f46;border-radius:9999px;padding:5px 12px;font-size:12px;font-weight:500;
+        color:#d4d4d8;min-height:24px;display:inline-flex;align-items:center;gap:6px}
+.tagbig b{color:#fafafa;font-weight:650;font-variant-numeric:tabular-nums}
+.hstrip{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+
+.filing{margin:0 14px 10px;display:flex;align-items:center;gap:7px;border:1px solid #3f3f46;background:#18181b;
+        border-radius:8px;padding:9px 11px;flex:none;flex-wrap:wrap}
+.filing .lab{font-size:11.5px;color:#a1a1aa;width:100%}
+.filing .pick{font-size:12px;font-weight:650;background:#fafafa;color:#09090b;padding:3px 10px;border-radius:9999px;
+              min-height:24px;display:inline-flex;align-items:center;gap:6px}
+.filing .pick .x{opacity:.55;font-weight:400}
+.filing .add{font-size:12px;border:1px dashed #3f3f46;color:#d4d4d8;padding:3px 10px;border-radius:9999px;
+             min-height:24px;display:inline-flex;align-items:center}
+.filing .rem{margin-left:auto;font-size:11.5px;color:#a1a1aa;font-variant-numeric:tabular-nums}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+.card .th{aspect-ratio:16/9;border-radius:12px;position:relative;overflow:hidden}
+.card .dur{position:absolute;right:5px;bottom:5px;font-size:9.5px;padding:1.5px 4px;border-radius:3px;
+           background:rgba(0,0,0,.82);color:#fff;font-variant-numeric:tabular-nums;z-index:3}
+.card .ttl{font-size:12px;font-weight:600;line-height:1.3;letter-spacing:-.011em;margin:6px 0 2px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .ch{font-size:11px;color:#a1a1aa}
+.card .tg{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.tag{font-size:12px;font-weight:500;padding:2px 9px;border-radius:9999px;border:1px solid #3f3f46;
+     background:#18181b;color:#d4d4d8;min-height:24px;display:inline-flex;align-items:center}
+.card.sel .th{outline:3px solid #fafafa;outline-offset:2px}
+.chk{position:absolute;top:5px;left:5px;width:24px;height:24px;border-radius:5px;background:#fafafa;color:#09090b;
+     box-shadow:0 0 0 2px #09090b;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:3}
+.st .th::after{content:"";position:absolute;inset:0;background:rgba(9,9,11,.60);z-index:1}
+.sb{position:absolute;left:5px;bottom:5px;display:flex;gap:3px;z-index:3}
+.sb span{min-width:24px;height:24px;border-radius:4px;background:rgba(0,0,0,.82);color:#fff;font-size:12px;
+         display:flex;align-items:center;justify-content:center;padding:0 5px}
+
+.bulk{margin:0 10px 8px;background:#fafafa;color:#09090b;border-radius:10px;padding:9px 11px;
+      display:flex;align-items:center;gap:7px;flex:none;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.bulk .n{font-size:12px;font-weight:650;white-space:nowrap}
+.bulk .sp{flex:1}
+.ba{font-size:11.5px;padding:7px 11px;border-radius:6px;border:1px solid rgba(9,9,11,.25);font-weight:500;
+    white-space:nowrap;min-height:24px}
+.ba.pri{background:#09090b;color:#fafafa;border-color:#09090b;font-weight:650}
+.ba.dgr{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:600}
+
+.tabs{height:56px;border-top:1px solid #27272a;background:#09090b;display:grid;grid-template-columns:repeat(4,1fr);flex:none}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9.5px;color:#a1a1aa;position:relative}
+.tab .ic{font-size:16px;opacity:.75}
+.tab.on{color:#fafafa;font-weight:650}
+.tab.on .ic{opacity:1}
+.tab.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;background:#fafafa;border-radius:0 0 3px 3px}
+
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:30}
+.drawer{position:absolute;left:0;top:0;bottom:0;width:74%;background:#09090b;border-right:1px solid #27272a;
+        z-index:31;padding:26px 10px 10px}
+.drawer .brand{font-size:14px;font-weight:650;letter-spacing:-.011em;padding:6px 11px 14px}
+.dn{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:7px;font-size:12.5px;color:#a1a1aa;
+    min-height:24px;position:relative}
+.dn .ic{width:16px;text-align:center;font-size:13px;opacity:.75}
+.dn.on{background:#18181b;color:#fafafa;font-weight:650}
+.dn.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;background:#fafafa;border-radius:0 3px 3px 0}
+.dn .p2{margin-left:auto;font-size:8.5px;opacity:.6;letter-spacing:.04em}
+.dsep{height:1px;background:#27272a;margin:8px 8px}
+
+.i1{background:linear-gradient(135deg,#8b5cf6,#ec4899)}.i2{background:linear-gradient(135deg,#0ea5e9,#14532d)}
+.i3{background:linear-gradient(135deg,#f59e0b,#dc2626)}.i4{background:linear-gradient(135deg,#334155,#0f172a)}
+.i5{background:linear-gradient(135deg,#10b981,#065f46)}.i6{background:linear-gradient(135deg,#e11d48,#7c2d12)}
+.i7{background:linear-gradient(135deg,#6366f1,#1e1b4b)}.i8{background:linear-gradient(135deg,#a16207,#422006)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Mobile — bottom bar and touch triage</h1>
+<p class="cap">UJ-2 happens here: Sunday night, one hand, in the dark. Two things to check — that the grid is <b>two columns and never one</b> (a single-column stack of full-width thumbnails is the doomscroll shape itself), and that selection still reads clearly at 24px with no accent color to help it.</p>
+
+<div class="row">
+
+  <div class="unit">
+    <div class="t">1 · Library hub on a phone</div>
+    <div class="d">Shelf rows, not a feed. Tags as pills, playlists and recent as two-up strips. Uncategorized still carries <b>no badge</b>.</div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="tb"><div class="s">Search your library</div><div class="av"></div></div>
+      <div class="h1">Library</div>
+      <div class="body">
+        <div class="shelf">
+          <div class="shead"><span class="t">Tags</span><span class="n">14</span><span class="more">View more →</span></div>
+          <div class="tagstrip">
+            <span class="tagbig">guitar <b>24</b></span><span class="tagbig">podcast <b>31</b></span>
+            <span class="tagbig">history <b>12</b></span><span class="tagbig">barca <b>8</b></span>
+            <span class="tagbig">cooking <b>19</b></span>
+          </div>
+        </div>
+        <div class="shelf">
+          <div class="shead"><span class="t">Playlists</span><span class="n">6</span><span class="more">View more →</span></div>
+          <div class="hstrip">
+            <div class="card"><div class="th i1"></div><div class="ttl">Guitar Course Vol.1</div><div class="ch">9 videos</div></div>
+            <div class="card"><div class="th i8"></div><div class="ttl">Cooking podcasts</div><div class="ch">14 videos</div></div>
+          </div>
+        </div>
+        <div class="shelf">
+          <div class="shead"><span class="t">Recently imported</span><span class="n">bounded</span></div>
+          <div class="hstrip">
+            <div class="card"><div class="th i3"><span class="dur">19:04</span></div>
+              <div class="ttl">Chord Theory in 20 Minutes</div><div class="ch">Signals Music Studio</div></div>
+            <div class="card st"><div class="th i5"><span class="sb"><span>✓</span></span><span class="dur">31:47</span></div>
+              <div class="ttl">Travis Picking, Properly Explained</div><div class="ch">Paul Davids</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><span class="ic">▤</span>Library</div>
+        <div class="tab"><span class="ic">◍</span>Uncategorized</div>
+        <div class="tab"><span class="ic">⌕</span>Search</div>
+        <div class="tab"><span class="ic">☰</span>More</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="unit">
+    <div class="t">2 · Focus mode, multi-tag, selection live</div>
+    <div class="d">Long-press entered selection mode. Two tags pinned, so a video gets both before it self-clears. Bulk bar stacks <b>above</b> the tabs — they never overlap.</div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="tb"><span class="cx">Cancel</span><span class="selcount">4 selected</span><span class="cx">Select all</span></div>
+      <div class="h1">Uncategorized</div>
+      <div class="filing">
+        <span class="lab">Filing as</span>
+        <span class="pick">guitar <span class="x">×</span></span>
+        <span class="pick">course <span class="x">×</span></span>
+        <span class="add">+ Add</span>
+        <span class="rem">94 left</span>
+      </div>
+      <div class="body"><div class="grid">
+        <div class="card sel"><div class="th i1"><span class="chk">✓</span><span class="dur">42:18</span></div>
+          <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div><div class="ch">Paul Davids</div></div>
+        <div class="card sel"><div class="th i3"><span class="chk">✓</span><span class="dur">19:04</span></div>
+          <div class="ttl">Chord Theory in 20 Minutes</div><div class="ch">Signals Music Studio</div></div>
+        <div class="card"><div class="th i2"><span class="dur">8:22</span></div>
+          <div class="ttl">Barça 5–0 Real Sociedad</div><div class="ch">FC Barcelona</div></div>
+        <div class="card sel"><div class="th i5"><span class="chk">✓</span><span class="dur">31:47</span></div>
+          <div class="ttl">Travis Picking, Properly Explained</div><div class="ch">Paul Davids</div></div>
+        <div class="card"><div class="th i4"><span class="dur">1:47:02</span></div>
+          <div class="ttl">The Fall of Constantinople, in full</div><div class="ch">Fall of Civilizations</div></div>
+        <div class="card sel"><div class="th i7"><span class="chk">✓</span><span class="dur">55:12</span></div>
+          <div class="ttl">Every Chord Shape You Actually Need</div><div class="ch">Music is Win</div></div>
+      </div></div>
+      <div class="bulk">
+        <span class="n">4</span>
+        <span class="ba pri">Apply guitar · course</span>
+        <span class="sp"></span>
+        <span class="ba dgr">Discard</span>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ic">▤</span>Library</div>
+        <div class="tab on"><span class="ic">◍</span>Uncategorized</div>
+        <div class="tab"><span class="ic">⌕</span>Search</div>
+        <div class="tab"><span class="ic">☰</span>More</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="unit">
+    <div class="t">3 · The “More” drawer</div>
+    <div class="d">Overflow destinations that don't earn a tab. Playlists is a plain link here too — the list is bounded forever, so Trash and Settings never get pushed away.</div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="tb"><div class="s">Search your library</div><div class="av"></div></div>
+      <div class="h1">Library</div>
+      <div class="body">
+        <div class="shelf">
+          <div class="shead"><span class="t">Tags</span><span class="n">14</span><span class="more">View more →</span></div>
+          <div class="tagstrip"><span class="tagbig">guitar <b>24</b></span><span class="tagbig">podcast <b>31</b></span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="drawer">
+        <div class="brand">YouTube Organizer</div>
+        <div class="dn on"><span class="ic">▤</span>Library</div>
+        <div class="dn"><span class="ic">◍</span>Uncategorized</div>
+        <div class="dn"><span class="ic">#</span>Tags</div>
+        <div class="dsep"></div>
+        <div class="dn"><span class="ic">☰</span>Playlists<span class="p2">P2</span></div>
+        <div class="dn"><span class="ic">◷</span>Needs review<span class="p2">P2</span></div>
+        <div class="dn"><span class="ic">✓</span>Watched<span class="p2">P2</span></div>
+        <div class="dsep"></div>
+        <div class="dn"><span class="ic">⌫</span>Trash</div>
+        <div class="dn"><span class="ic">⚙</span>Settings</div>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><span class="ic">▤</span>Library</div>
+        <div class="tab"><span class="ic">◍</span>Uncategorized</div>
+        <div class="tab"><span class="ic">⌕</span>Search</div>
+        <div class="tab"><span class="ic">☰</span>More</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

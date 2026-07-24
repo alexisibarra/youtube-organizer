@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YouTube Organizer — Typeface Comparison (Theme C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Typeface comparison — rendered in Theme C (Cool Archive)
+   light: bg #ffffff surface #f4f4f5 text #18181b muted #71717a border #e4e4e7
+   dark:  bg #09090b surface #18181b text #fafafa muted #a1a1aa border #27272a
+   NOTE: Roboto + Inter load from Google Fonts. If you are offline they will
+   silently fall back to system and the comparison is invalid — check the
+   warning strip renders differently per column.
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:#e9e9ec; color:#18181b; padding:28px 18px 60px;
+       font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; }
+.page { max-width:1300px; margin:0 auto; }
+h1 { font-size:21px; font-weight:650; letter-spacing:-.02em; margin-bottom:6px; }
+.lede { color:#52525b; max-width:76ch; margin-bottom:10px; }
+.warn { background:#fff8e1; border:1px solid #f0d98a; color:#6b5300; font-size:12.5px;
+        padding:8px 12px; border-radius:8px; margin-bottom:24px; max-width:76ch; }
+
+.cols { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+@media (max-width:1120px){ .cols{ grid-template-columns:repeat(2,1fr);} }
+@media (max-width:640px){ .cols{ grid-template-columns:1fr;} }
+
+.col { background:#fff; border:1px solid #d4d4d8; border-radius:11px; overflow:hidden; }
+.col > header { padding:11px 13px; border-bottom:1px solid #e4e4e7; }
+.col h2 { font-size:14.5px; font-weight:650; letter-spacing:-.01em; }
+.col .meta { font-size:11.5px; color:#71717a; margin-top:2px; }
+.col .cost { display:inline-block; margin-top:6px; font-size:10.5px; padding:2px 7px; border-radius:999px;
+             background:#f4f4f5; border:1px solid #e4e4e7; color:#3f3f46; }
+
+.sec { padding:13px; border-top:1px solid #e4e4e7; }
+.sec:first-of-type { border-top:0; }
+.sec > .lbl { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:#a1a1aa; font-weight:600; margin-bottom:9px; }
+
+/* ---- specimen area inherits the column's font ---- */
+.f-sys   { font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+.f-robo  { font-family:"Roboto", sans-serif; }
+.f-inter { font-family:"Inter", sans-serif; }
+.f-geist { font-family:ui-sans-serif, "SF Pro Display", "Segoe UI Variable", system-ui, sans-serif; letter-spacing:-.011em; }
+
+/* scale */
+.scale div { margin-bottom:7px; color:#18181b; }
+.s-page  { font-size:20px; font-weight:650; letter-spacing:-.02em; }
+.s-sect  { font-size:15px; font-weight:600; letter-spacing:-.01em; }
+.s-card  { font-size:13.5px; font-weight:600; line-height:1.32; }
+.s-body  { font-size:13px; }
+.s-mut   { font-size:12px; color:#71717a; }
+.s-micro { font-size:10.5px; color:#71717a; }
+
+/* grid card */
+.card .thumb { aspect-ratio:16/9; background:#e4e4e7; border-radius:8px; position:relative; }
+.card .dur { position:absolute; right:5px; bottom:5px; font-size:10px; padding:1px 4px;
+             border-radius:3px; background:rgba(0,0,0,.82); color:#fff; font-variant-numeric:tabular-nums; }
+.card .ttl { font-size:13.5px; font-weight:600; line-height:1.32; margin:7px 0 2px; }
+.card .ch  { font-size:12px; color:#71717a; }
+.card .tags { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+.tag { font-size:10.5px; padding:1.5px 7px; border-radius:999px; border:1px solid #e4e4e7; background:#f4f4f5; color:#71717a; }
+
+/* dense list rows — where type matters most */
+.rows { border:1px solid #e4e4e7; border-radius:8px; overflow:hidden; }
+.row { display:flex; align-items:center; gap:8px; padding:6px 9px; border-bottom:1px solid #e4e4e7; }
+.row:last-child { border-bottom:0; }
+.row .cb { width:14px; height:14px; border-radius:3px; border:1.5px solid #a1a1aa; flex:none; }
+.row .cb.on { background:#18181b; border-color:#18181b; position:relative; }
+.row .cb.on::after { content:"✓"; position:absolute; inset:0; color:#fff; font-size:10px; line-height:11px; text-align:center; font-weight:700; }
+.row .th { width:34px; height:19px; background:#e4e4e7; border-radius:3px; flex:none; }
+.row .t { font-size:12.5px; font-weight:500; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row .d { font-size:11px; color:#71717a; font-variant-numeric:tabular-nums; flex:none; }
+
+/* dark strip */
+.dark { background:#09090b; padding:13px; }
+.dark .lbl { color:#52525b; }
+.dark .rows { border-color:#27272a; }
+.dark .row { border-color:#27272a; }
+.dark .row .t { color:#fafafa; }
+.dark .row .d { color:#a1a1aa; }
+.dark .row .th { background:#27272a; }
+.dark .row .cb { border-color:#52525b; }
+.dark .row .cb.on { background:#fafafa; border-color:#fafafa; }
+.dark .row .cb.on::after { color:#09090b; }
+
+/* numerals check */
+.nums { font-size:12.5px; font-variant-numeric:tabular-nums; color:#18181b; line-height:1.7; }
+.nums span { color:#71717a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Typeface comparison — in Theme C, at real sizes</h1>
+<p class="lede">Same content in all four columns. The section that matters most is <b>dense list rows</b> — that's triage, 100 videos deep, where a typeface either holds up or turns to mush. Second most: <b>durations</b>, because tabular numerals stop the timestamps from jittering column-to-column.</p>
+<div class="warn">⚠ Roboto and Inter load from Google Fonts. If you're offline, those two columns silently fall back to system and this comparison is meaningless — sanity-check that all four columns actually look different from each other.</div>
+
+<div class="cols">
+
+  <!-- ============ SYSTEM ============ -->
+  <div class="col f-sys">
+    <header>
+      <h2>System stack</h2>
+      <div class="meta">SF Pro on your Mac · shadcn default</div>
+      <span class="cost">0 KB · no webfont</span>
+    </header>
+    <div class="sec">
+      <div class="lbl">Scale</div>
+      <div class="scale">
+        <div class="s-page">Uncategorized</div>
+        <div class="s-sect">87 videos to file</div>
+        <div class="s-card">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="s-body">Filter by tag, channel, or length.</div>
+        <div class="s-mut">Paul Davids · imported 3 days ago</div>
+        <div class="s-micro">#guitar #course #evergreen</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Grid card</div>
+      <div class="card">
+        <div class="thumb"><span class="dur">42:18</span></div>
+        <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="ch">Paul Davids</div>
+        <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Dense list — triage</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Chord Theory in 20 Minutes</span><span class="d">19:04</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Travis Picking, Properly Explained</span><span class="d">31:47</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="dark">
+      <div class="lbl">Dark</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Numerals</div>
+      <div class="nums">1:47:02 &nbsp; 42:18 &nbsp; 8:22<br><span>87 videos · 14 selected · 2026</span></div>
+    </div>
+  </div>
+
+  <!-- ============ ROBOTO ============ -->
+  <div class="col f-robo">
+    <header>
+      <h2>Roboto</h2>
+      <div class="meta">YouTube's actual typeface</div>
+      <span class="cost">~40 KB · webfont</span>
+    </header>
+    <div class="sec">
+      <div class="lbl">Scale</div>
+      <div class="scale">
+        <div class="s-page">Uncategorized</div>
+        <div class="s-sect">87 videos to file</div>
+        <div class="s-card">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="s-body">Filter by tag, channel, or length.</div>
+        <div class="s-mut">Paul Davids · imported 3 days ago</div>
+        <div class="s-micro">#guitar #course #evergreen</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Grid card</div>
+      <div class="card">
+        <div class="thumb"><span class="dur">42:18</span></div>
+        <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="ch">Paul Davids</div>
+        <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Dense list — triage</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Chord Theory in 20 Minutes</span><span class="d">19:04</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Travis Picking, Properly Explained</span><span class="d">31:47</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="dark">
+      <div class="lbl">Dark</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Numerals</div>
+      <div class="nums">1:47:02 &nbsp; 42:18 &nbsp; 8:22<br><span>87 videos · 14 selected · 2026</span></div>
+    </div>
+  </div>
+
+  <!-- ============ INTER ============ -->
+  <div class="col f-inter">
+    <header>
+      <h2>Inter</h2>
+      <div class="meta">UI-tuned neutral sans</div>
+      <span class="cost">~45 KB · webfont</span>
+    </header>
+    <div class="sec">
+      <div class="lbl">Scale</div>
+      <div class="scale">
+        <div class="s-page">Uncategorized</div>
+        <div class="s-sect">87 videos to file</div>
+        <div class="s-card">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="s-body">Filter by tag, channel, or length.</div>
+        <div class="s-mut">Paul Davids · imported 3 days ago</div>
+        <div class="s-micro">#guitar #course #evergreen</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Grid card</div>
+      <div class="card">
+        <div class="thumb"><span class="dur">42:18</span></div>
+        <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="ch">Paul Davids</div>
+        <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Dense list — triage</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Chord Theory in 20 Minutes</span><span class="d">19:04</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Travis Picking, Properly Explained</span><span class="d">31:47</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="dark">
+      <div class="lbl">Dark</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Numerals</div>
+      <div class="nums">1:47:02 &nbsp; 42:18 &nbsp; 8:22<br><span>87 videos · 14 selected · 2026</span></div>
+    </div>
+  </div>
+
+  <!-- ============ GEIST-ISH ============ -->
+  <div class="col f-geist">
+    <header>
+      <h2>Geist</h2>
+      <div class="meta">Vercel's sans · tighter tracking</div>
+      <span class="cost">~38 KB · webfont</span>
+    </header>
+    <div class="sec">
+      <div class="lbl">Scale</div>
+      <div class="scale">
+        <div class="s-page">Uncategorized</div>
+        <div class="s-sect">87 videos to file</div>
+        <div class="s-card">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="s-body">Filter by tag, channel, or length.</div>
+        <div class="s-mut">Paul Davids · imported 3 days ago</div>
+        <div class="s-micro">#guitar #course #evergreen</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Grid card</div>
+      <div class="card">
+        <div class="thumb"><span class="dur">42:18</span></div>
+        <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+        <div class="ch">Paul Davids</div>
+        <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Dense list — triage</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Chord Theory in 20 Minutes</span><span class="d">19:04</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Travis Picking, Properly Explained</span><span class="d">31:47</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="dark">
+      <div class="lbl">Dark</div>
+      <div class="rows">
+        <div class="row"><span class="cb on"></span><span class="th"></span><span class="t">Fingerstyle Fundamentals — Lesson 4</span><span class="d">42:18</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">Barça 5–0 Highlights</span><span class="d">8:22</span></div>
+        <div class="row"><span class="cb"></span><span class="th"></span><span class="t">The Fall of Constantinople, in full</span><span class="d">1:47:02</span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="lbl">Numerals</div>
+      <div class="nums">1:47:02 &nbsp; 42:18 &nbsp; 8:22<br><span>87 videos · 14 selected · 2026</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

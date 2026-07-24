@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen — Uncategorized (both triage modes)</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Uncategorized — the triage surface. UJ-2 core loop.
+   Two load-bearing modes rendered as two sections in one file.
+   Governed by:
+     EXPERIENCE.md § Triage Modes (list mode / focus mode, the bound, the rules)
+                   § Component Patterns (selection, bulk action bar, triage row)
+                   § State Patterns (import partial failure, pending-clear orphans,
+                                     empty Uncategorized = the win state)
+                   § Voice and Tone (dry and factual — every string here)
+                   § Key Flows UJ-2 steps 2-8
+     DESIGN.md § Components (triage-row, bulk-action-bar, selection-*)
+               § Colors (selection is achromatic; destructive is the only hue)
+   NOTE: production typeface is Geist Sans. System stack used per offline rule.
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e9e9ec;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;color:#18181b;margin-bottom:4px}
+.cap{color:#52525b;font-size:13px;margin-bottom:14px;max-width:82ch}
+h2{font-size:15px;font-weight:650;color:#18181b;margin:30px 0 5px;letter-spacing:-.011em}
+.sub{color:#52525b;font-size:12.5px;margin-bottom:12px;max-width:82ch}
+.frame{border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14)}
+.lblbar{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+        padding:6px 12px;background:#18181b;color:#a1a1aa}
+
+.app{background:#09090b;color:#fafafa;padding:16px 22px 0;min-height:520px;position:relative}
+.h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin-bottom:3px}
+.sub2{font-size:12px;color:#a1a1aa;margin-bottom:14px}
+
+/* banners — dry voice, non-blocking */
+.banner{border:1px solid #27272a;background:#18181b;border-radius:8px;padding:9px 13px;
+        font-size:12px;color:#a1a1aa;margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.banner b{color:#fafafa;font-weight:600}
+
+/* mode switch */
+.modes{display:flex;gap:0;border:1px solid #27272a;border-radius:6px;overflow:hidden;margin-bottom:14px;width:fit-content}
+.modes span{padding:6px 14px;font-size:12px;color:#a1a1aa}
+.modes span.on{background:#18181b;color:#fafafa;font-weight:600}
+
+/* ---------- LIST MODE ---------- */
+.rows{border:1px solid #27272a;border-radius:8px;overflow:hidden;margin-bottom:70px}
+.row{display:flex;align-items:center;gap:11px;padding:6px 9px;border-bottom:1px solid #27272a}
+.row:last-child{border-bottom:0}
+.row.foc{background:#18181b}
+.cb{width:17px;height:17px;border-radius:4px;border:1.5px solid #52525b;flex:none;position:relative}
+.cb.on{background:#fafafa;border-color:#fafafa}
+.cb.on::after{content:"✓";position:absolute;inset:0;color:#09090b;font-size:12px;line-height:14px;text-align:center;font-weight:700}
+.rth{width:44px;height:25px;border-radius:4px;flex:none}
+.rt{font-size:12.5px;font-weight:500;letter-spacing:-.011em;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc{font-size:11.5px;color:#a1a1aa;width:150px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd{font-size:11px;color:#a1a1aa;font-variant-numeric:tabular-nums;flex:none;width:52px;text-align:right}
+
+/* bulk action bar — inverted fill, sticky */
+.bulk{position:absolute;left:22px;right:22px;bottom:16px;background:#fafafa;color:#09090b;
+      border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;
+      box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.bulk .n{font-size:12.5px;font-weight:650}
+.bulk .sp{flex:1}
+.ba{font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid rgba(9,9,11,.22);font-weight:500}
+.ba.dgr{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:600}
+.bx{font-size:12px;color:#52525b;padding:5px 8px}
+
+/* ---------- FOCUS MODE ---------- */
+.filing{display:flex;align-items:center;gap:11px;border:1px solid #27272a;background:#18181b;
+        border-radius:8px;padding:10px 14px;margin-bottom:14px}
+.filing .lab{font-size:12px;color:#a1a1aa}
+.filing .tagpick{font-size:12.5px;font-weight:650;background:#fafafa;color:#09090b;
+                 padding:3.5px 13px;border-radius:9999px}
+.filing .rem{margin-left:auto;font-size:12px;color:#a1a1aa;font-variant-numeric:tabular-nums}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:70px}
+.card .th{aspect-ratio:16/9;border-radius:12px;position:relative;overflow:hidden}
+.card .dur{position:absolute;right:6px;bottom:6px;font-size:10.5px;padding:1.5px 5px;border-radius:4px;
+           background:rgba(0,0,0,.82);color:#fff;font-variant-numeric:tabular-nums}
+.card .ttl{font-size:13px;font-weight:600;line-height:1.32;letter-spacing:-.011em;margin:9px 0 3px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .ch{font-size:11.5px;color:#a1a1aa}
+/* selection: outline + filled checkbox, both, achromatic */
+.card.sel .th{outline:3px solid #fafafa;outline-offset:2px}
+.chk{position:absolute;top:6px;left:6px;width:19px;height:19px;border-radius:4px;
+     background:#fafafa;color:#09090b;font-size:13px;font-weight:700;text-align:center;line-height:19px;z-index:2}
+.i1{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
+.i2{background:linear-gradient(135deg,#0ea5e9,#14532d)}
+.i3{background:linear-gradient(135deg,#f59e0b,#dc2626)}
+.i4{background:linear-gradient(135deg,#334155,#0f172a)}
+.i5{background:linear-gradient(135deg,#10b981,#065f46)}
+.i6{background:linear-gradient(135deg,#e11d48,#7c2d12)}
+.i7{background:linear-gradient(135deg,#6366f1,#1e1b4b)}
+.i8{background:linear-gradient(135deg,#a16207,#422006)}
+
+/* ---------- WIN STATE + DIALOG ---------- */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.duo{grid-template-columns:1fr}}
+.mini{background:#09090b;color:#fafafa;border-radius:12px;padding:22px;min-height:240px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+      box-shadow:0 8px 32px rgba(0,0,0,.14)}
+.mini .big{font-size:15px;font-weight:600;letter-spacing:-.011em;margin-bottom:6px}
+.mini .lnk{font-size:12px;color:#a1a1aa;text-decoration:underline;text-underline-offset:3px}
+.dlgwrap{background:#09090b;border-radius:12px;padding:34px 22px;display:flex;align-items:center;justify-content:center;
+         box-shadow:0 8px 32px rgba(0,0,0,.14)}
+.dlg{background:#18181b;border:1px solid #27272a;border-radius:8px;padding:18px;width:100%;max-width:340px;color:#fafafa}
+.dlg h3{font-size:15px;font-weight:600;letter-spacing:-.011em;margin-bottom:7px}
+.dlg p{font-size:13px;color:#a1a1aa;margin-bottom:16px;line-height:1.5}
+.dlg .acts{display:flex;gap:8px;justify-content:flex-end}
+.dlg .acts span{font-size:12.5px;padding:6px 14px;border-radius:6px}
+.dlg .cancel{border:1px solid #27272a;color:#fafafa}
+.dlg .del{background:#ef4444;color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Uncategorized — both triage modes</h1>
+<p class="cap">UJ-2, Sunday evening, 94 videos imported. Rendered in dark mode because that's when triage actually happens. Every string here is voice-checked: dry, factual, no exclamation marks. Note the banners report failures without blocking, and the discard action lives on the <b>selection</b>, never on a card.</p>
+
+<h2>1 · List mode — the default</h2>
+<p class="sub">Gmail-shaped. Three rows selected; the bulk action bar carries the count and every action. Row 4 shows keyboard focus (<code>j</code>/<code>k</code> navigation).</p>
+<div class="frame">
+  <div class="lblbar">List mode · 3 selected</div>
+  <div class="app">
+    <div class="h1">Uncategorized</div>
+    <div class="sub2">94 videos</div>
+    <div class="banner">✓ <b>94 videos imported.</b></div>
+    <div class="banner">⚠ <b>3 videos imported but not removed from <code>_Inbox</code>.</b> Retrying next sync.</div>
+    <div class="modes"><span class="on">List mode</span><span>Focus mode</span></div>
+    <div class="rows">
+      <div class="row"><span class="cb on"></span><span class="rth i1"></span><span class="rt">Fingerstyle Fundamentals — Lesson 4: Travis Picking</span><span class="rc">Paul Davids</span><span class="rd">42:18</span></div>
+      <div class="row"><span class="cb on"></span><span class="rth i3"></span><span class="rt">Chord Theory in 20 Minutes</span><span class="rc">Signals Music Studio</span><span class="rd">19:04</span></div>
+      <div class="row"><span class="cb"></span><span class="rth i2"></span><span class="rt">Barça 5–0 Real Sociedad — Extended Highlights</span><span class="rc">FC Barcelona</span><span class="rd">8:22</span></div>
+      <div class="row foc"><span class="cb on"></span><span class="rth i5"></span><span class="rt">Travis Picking, Properly Explained</span><span class="rc">Paul Davids</span><span class="rd">31:47</span></div>
+      <div class="row"><span class="cb"></span><span class="rth i4"></span><span class="rt">The Fall of Constantinople, in full</span><span class="rc">Fall of Civilizations</span><span class="rd">1:47:02</span></div>
+      <div class="row"><span class="cb"></span><span class="rth i6"></span><span class="rt">Why the 2008 Crash Still Matters</span><span class="rc">Economics Explained</span><span class="rd">24:16</span></div>
+      <div class="row"><span class="cb"></span><span class="rth i8"></span><span class="rt">Slow-Cooked Ragù, the Long Way</span><span class="rc">Ethan Chlebowski</span><span class="rd">18:03</span></div>
+      <div class="row"><span class="cb"></span><span class="rth i7"></span><span class="rt">Every Chord Shape You Actually Need</span><span class="rc">Music is Win</span><span class="rd">55:12</span></div>
+    </div>
+    <div class="bulk">
+      <span class="n">3 selected</span>
+      <span class="sp"></span>
+      <span class="ba">Tag ▾</span><span class="ba">Freshness ▾</span><span class="ba">Add to playlist ▾</span>
+      <span class="ba dgr">Discard</span>
+      <span class="bx">Esc to clear</span>
+    </div>
+  </div>
+</div>
+
+<h2>2 · Focus mode — tag-first bucketing</h2>
+<p class="sub">The tag is chosen first and pinned to the header. Sweeping is pure toggling — no dialogs, no menus, no per-video decisions. One Apply files the whole selection. Selection is achromatic: 3px outline <em>plus</em> filled checkbox, deliberately redundant.</p>
+<div class="frame">
+  <div class="lblbar">Focus mode · filing as guitar · 4 selected</div>
+  <div class="app">
+    <div class="h1">Uncategorized</div>
+    <div class="sub2">94 videos</div>
+    <div class="modes"><span>List mode</span><span class="on">Focus mode</span></div>
+    <div class="filing">
+      <span class="lab">Filing as</span>
+      <span class="tagpick">guitar ▾</span>
+      <span class="rem">94 left</span>
+    </div>
+    <div class="grid">
+      <div class="card sel"><div class="th i1"><span class="chk">✓</span><span class="dur">42:18</span></div>
+        <div class="ttl">Fingerstyle Fundamentals — Lesson 4: Travis Picking</div><div class="ch">Paul Davids</div></div>
+      <div class="card sel"><div class="th i3"><span class="chk">✓</span><span class="dur">19:04</span></div>
+        <div class="ttl">Chord Theory in 20 Minutes</div><div class="ch">Signals Music Studio</div></div>
+      <div class="card"><div class="th i2"><span class="dur">8:22</span></div>
+        <div class="ttl">Barça 5–0 Real Sociedad — Extended Highlights</div><div class="ch">FC Barcelona</div></div>
+      <div class="card sel"><div class="th i5"><span class="chk">✓</span><span class="dur">31:47</span></div>
+        <div class="ttl">Travis Picking, Properly Explained</div><div class="ch">Paul Davids</div></div>
+      <div class="card"><div class="th i4"><span class="dur">1:47:02</span></div>
+        <div class="ttl">The Fall of Constantinople, in full</div><div class="ch">Fall of Civilizations</div></div>
+      <div class="card"><div class="th i8"><span class="dur">18:03</span></div>
+        <div class="ttl">Slow-Cooked Ragù, the Long Way</div><div class="ch">Ethan Chlebowski</div></div>
+      <div class="card sel"><div class="th i7"><span class="chk">✓</span><span class="dur">55:12</span></div>
+        <div class="ttl">Every Chord Shape You Actually Need</div><div class="ch">Music is Win</div></div>
+      <div class="card"><div class="th i6"><span class="dur">24:16</span></div>
+        <div class="ttl">Why the 2008 Crash Still Matters</div><div class="ch">Economics Explained</div></div>
+    </div>
+    <div class="bulk">
+      <span class="n">4 selected</span>
+      <span class="sp"></span>
+      <span class="ba" style="background:#09090b;color:#fafafa;border-color:#09090b;font-weight:650">Apply “guitar” to 4</span>
+      <span class="bx">Esc to clear</span>
+    </div>
+  </div>
+</div>
+
+<h2>3 · The two states everything else hangs on</h2>
+<p class="sub">Left: the win state — dry by design, because the dryness <em>is</em> the reward. Right: the mandatory confirmation, the one place red appears in the entire product.</p>
+<div class="duo">
+  <div class="mini">
+    <div class="big">Nothing to file.</div>
+    <div class="lnk">Back to Library</div>
+  </div>
+  <div class="dlgwrap">
+    <div class="dlg">
+      <h3>Delete 6 videos?</h3>
+      <p>They move to Trash for 30 days.</p>
+      <div class="acts"><span class="cancel">Cancel</span><span class="del">Delete</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

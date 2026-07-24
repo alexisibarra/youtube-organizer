@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen — Library hub + Tag detail</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Library hub (entry) + Tag detail (drill-down). UJ-3.
+   RE-RENDERED against the post-validation spines.
+   Governed by:
+     EXPERIENCE.md § Information Architecture (Library = shelf rows, NOT a
+                     video list; Tag detail is where browse happens;
+                     Playlists is a PLAIN sidebar link)
+                   § Component Patterns (shelf row, filter chip row = TAGS ONLY,
+                     Filters panel, tag popover, view toggle)
+                   § Key Flows UJ-3 steps 1-4
+     DESIGN.md § Colors (border vs border-subtle; chip-foreground #52525B)
+               § Components (status-badge = scrim + ICON, selection 24px,
+                 focus-indicator DASHED, sidebar active-edge bar)
+   Deltas from the previous render, each traceable to a review finding:
+     - Library is now shelf rows, not a grid of everything
+     - Filter row carries tags only; structured facets behind "Filters"
+     - Sidebar playlist sublist REMOVED (40 playlists pushed Trash off-screen)
+     - Watched now scrim + icon badge (scrim alone measured 1.00:1)
+     - Tag chips 12px / #52525B / 24px min-height (was 10.5px / #71717A = 4.40:1)
+     - Active nav gains a 3px edge bar (tint alone measured 1.10:1)
+     - Dashed focus ring shown beside solid selection, no longer alike
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e9e9ec;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1500px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;color:#18181b;margin-bottom:4px}
+.cap{color:#52525b;font-size:13px;margin-bottom:16px;max-width:84ch}
+h2{font-size:15px;font-weight:650;color:#18181b;margin:28px 0 4px;letter-spacing:-.011em}
+.sub{color:#52525b;font-size:12.5px;margin-bottom:12px;max-width:84ch}
+.frame{border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14)}
+.bar{background:#dcdce0;padding:8px 12px;display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;background:#c2c2c8}
+.url{flex:1;background:#f1f1f4;border-radius:6px;font-size:11px;color:#71717a;padding:3px 10px;margin-left:6px}
+.lblbar{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+        padding:6px 12px;background:#18181b;color:#a1a1aa}
+
+.app{display:grid;grid-template-columns:240px 1fr;min-height:640px}
+.L{--bg:#fff;--surf:#f4f4f5;--tx:#18181b;--mu:#71717a;--chip:#52525b;--bd:#d4d4d8;--bds:#e4e4e7;
+   --th:#e4e4e7;--inv:#18181b;--invfg:#fff;--edge:#fff}
+.D{--bg:#09090b;--surf:#18181b;--tx:#fafafa;--mu:#a1a1aa;--chip:#d4d4d8;--bd:#3f3f46;--bds:#27272a;
+   --th:#27272a;--inv:#fafafa;--invfg:#09090b;--edge:#09090b}
+.app{background:var(--bg);color:var(--tx)}
+
+.side{border-right:1px solid var(--bds);padding:12px 10px}
+.brand{font-size:15px;font-weight:650;letter-spacing:-.011em;padding:4px 10px 14px}
+.nav{display:flex;align-items:center;gap:11px;padding:8px 11px;border-radius:6px;font-size:12px;
+     margin-bottom:2px;color:var(--mu);min-height:24px;position:relative}
+.nav .ic{width:16px;text-align:center;opacity:.7;font-size:13px;flex:none}
+.nav.on{background:var(--surf);color:var(--tx);font-weight:650}
+.nav.on::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:3px;
+                background:var(--tx);border-radius:0 3px 3px 0}
+.nav .p2{margin-left:auto;font-size:9px;opacity:.6;letter-spacing:.04em}
+.sep{height:1px;background:var(--bds);margin:9px 6px}
+
+.main{padding:16px 22px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.search{flex:1;max-width:520px;border:1px solid var(--bd);background:var(--surf);border-radius:9999px;
+        padding:7px 16px;font-size:12.5px;color:var(--mu);min-height:24px}
+.spacer{flex:1}
+.vtog{display:flex;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.vtog span{padding:5px 11px;font-size:12px;color:var(--chip);min-height:24px}
+.vtog span.on{background:var(--surf);color:var(--tx);font-weight:600}
+.avatar{width:28px;height:28px;border-radius:9999px;background:var(--surf);border:1px solid var(--bd)}
+.h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin-bottom:14px}
+
+.shelf{margin-bottom:24px}
+.shead{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
+.shead .t{font-size:15px;font-weight:600;letter-spacing:-.011em}
+.shead .n{font-size:12px;color:var(--mu);font-variant-numeric:tabular-nums}
+.shead .more{margin-left:auto;font-size:12px;color:var(--chip);font-weight:500}
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.tagstrip{display:flex;gap:9px;flex-wrap:wrap}
+.tagbig{border:1px solid var(--bd);border-radius:9999px;padding:7px 15px;font-size:12px;font-weight:500;
+        color:var(--chip);min-height:24px;display:flex;align-items:center;gap:7px}
+.tagbig b{color:var(--tx);font-weight:650;font-variant-numeric:tabular-nums}
+
+.card .th{aspect-ratio:16/9;background:var(--th);border-radius:12px;position:relative;overflow:hidden}
+.card .dur{position:absolute;right:6px;bottom:6px;font-size:10.5px;padding:2px 5px;border-radius:4px;
+           background:rgba(0,0,0,.82);color:#fff;font-variant-numeric:tabular-nums;z-index:3}
+.card .ttl{font-size:13.5px;font-weight:600;line-height:1.32;letter-spacing:-.011em;margin:9px 0 3px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .ch{font-size:12px;color:var(--mu)}
+.card .tg{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;align-items:center}
+.tag{font-size:12px;font-weight:500;padding:3px 10px;border-radius:9999px;border:1px solid var(--bd);
+     background:var(--surf);color:var(--chip);min-height:24px;display:inline-flex;align-items:center}
+.tag.more{border-style:dashed}
+.st .th::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.55);z-index:1}
+.D .st .th::after{background:rgba(9,9,11,.60)}
+.sb{position:absolute;left:6px;bottom:6px;display:flex;gap:4px;z-index:3}
+.sb span{min-width:24px;height:24px;border-radius:4px;background:rgba(0,0,0,.82);color:#fff;
+         font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.card.sel .th{outline:3px solid var(--inv);outline-offset:2px}
+.chk{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:4px;background:var(--inv);
+     color:var(--invfg);box-shadow:0 0 0 2px var(--edge);font-size:14px;font-weight:700;
+     display:flex;align-items:center;justify-content:center;z-index:3}
+.card.foc .th{outline:2px dashed var(--inv);outline-offset:4px}
+
+.i1{background:linear-gradient(135deg,#8b5cf6,#ec4899)}.i2{background:linear-gradient(135deg,#0ea5e9,#14532d)}
+.i3{background:linear-gradient(135deg,#f59e0b,#dc2626)}.i4{background:linear-gradient(135deg,#334155,#0f172a)}
+.i5{background:linear-gradient(135deg,#10b981,#065f46)}.i6{background:linear-gradient(135deg,#e11d48,#7c2d12)}
+.i7{background:linear-gradient(135deg,#6366f1,#1e1b4b)}.i8{background:linear-gradient(135deg,#a16207,#422006)}
+.i9{background:linear-gradient(135deg,#fde68a,#fafaf9)}
+
+.chips{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.fc{font-size:12px;font-weight:500;padding:5px 13px;border-radius:9999px;border:1px solid var(--bd);
+    background:var(--bg);color:var(--chip);min-height:24px;display:inline-flex;align-items:center}
+.fc.on{background:var(--inv);color:var(--invfg);border-color:var(--inv);font-weight:600}
+.fc.allt{border-style:dashed}
+.fbtn{font-size:12px;font-weight:500;padding:5px 13px;border-radius:6px;border:1px solid var(--bd);
+      color:var(--tx);min-height:24px;display:inline-flex;align-items:center;gap:6px}
+.appliedb{font-size:12px;color:var(--mu);margin-left:2px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pop{position:absolute;z-index:20;background:var(--bg);border:1px solid var(--bd);border-radius:8px;
+     padding:9px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;gap:5px;flex-wrap:wrap;width:210px}
+.rel{position:relative}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Library hub + Tag detail</h1>
+<p class="cap"><b>Re-rendered against the post-validation spines.</b> Library no longer shows a grid of everything — it shows the app's organizational structure as shelf rows, which is how "Library = all videos" and "no chronological feeds" stop contradicting each other. Browsing happens one level down, on Tag detail.</p>
+
+<h2>1 · Library — the hub</h2>
+<p class="sub">Rows, not a feed. Nothing to scroll past; every "View more" lands on a finite surface. Sidebar Playlists is now a plain link, so Trash stays visible at any playlist count. Note the 3px edge bar on the active nav item — the surface tint alone measured 1.10:1 and could not carry the signal.</p>
+<div class="frame">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="url">localhost:3000/library</span></div>
+  <div class="lblbar">Light · hub</div>
+  <div class="app L">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav on"><span class="ic">▤</span>Library</div>
+      <div class="nav"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">☰</span>Playlists<span class="p2">P2</span></div>
+      <div class="nav"><span class="ic">◷</span>Needs review<span class="p2">P2</span></div>
+      <div class="nav"><span class="ic">✓</span>Watched<span class="p2">P2</span></div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="top"><div class="search">Search your library</div><div class="spacer"></div><div class="avatar"></div></div>
+      <div class="h1">Library</div>
+
+      <div class="shelf">
+        <div class="shead"><span class="t">Tags</span><span class="n">14 tags · 903 videos</span><span class="more">View more →</span></div>
+        <div class="tagstrip">
+          <span class="tagbig">guitar <b>24</b></span><span class="tagbig">podcast <b>31</b></span>
+          <span class="tagbig">history <b>12</b></span><span class="tagbig">barca <b>8</b></span>
+          <span class="tagbig">cooking <b>19</b></span><span class="tagbig">course <b>11</b></span>
+          <span class="tagbig">theory <b>7</b></span><span class="tagbig">gear <b>5</b></span>
+        </div>
+      </div>
+
+      <div class="shelf">
+        <div class="shead"><span class="t">Playlists</span><span class="n">6</span><span class="more">View more →</span></div>
+        <div class="strip">
+          <div class="card"><div class="th i1"></div><div class="ttl">Guitar Course Vol.1</div><div class="ch">9 videos</div></div>
+          <div class="card"><div class="th i8"></div><div class="ttl">Cooking podcasts</div><div class="ch">14 videos</div></div>
+          <div class="card"><div class="th i4"></div><div class="ttl">Long history listens</div><div class="ch">7 videos</div></div>
+          <div class="card"><div class="th i6"></div><div class="ttl">Barça 2025/26</div><div class="ch">22 videos</div></div>
+          <div class="card"><div class="th i7"></div><div class="ttl">Theory, slowly</div><div class="ch">5 videos</div></div>
+        </div>
+      </div>
+
+      <div class="shelf">
+        <div class="shead"><span class="t">Channels</span><span class="n">38</span><span class="more">View more →</span></div>
+        <div class="tagstrip">
+          <span class="tagbig">Paul Davids <b>17</b></span><span class="tagbig">Fall of Civilizations <b>9</b></span>
+          <span class="tagbig">FC Barcelona <b>26</b></span><span class="tagbig">Ethan Chlebowski <b>14</b></span>
+          <span class="tagbig">Signals Music Studio <b>11</b></span>
+        </div>
+      </div>
+
+      <div class="shelf">
+        <div class="shead"><span class="t">Recently imported</span><span class="n">bounded — one row, never paginates</span></div>
+        <div class="strip">
+          <div class="card"><div class="th i3"><span class="dur">19:04</span></div>
+            <div class="ttl">Chord Theory in 20 Minutes</div><div class="ch">Signals Music Studio</div>
+            <div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+          <div class="card"><div class="th i2"><span class="dur">8:22</span></div>
+            <div class="ttl">Barça 5–0 Real Sociedad</div><div class="ch">FC Barcelona</div>
+            <div class="tg"><span class="tag">barca</span></div></div>
+          <div class="card"><div class="th i4"><span class="dur">1:47:02</span></div>
+            <div class="ttl">The Fall of Constantinople, in full</div><div class="ch">Fall of Civilizations</div>
+            <div class="tg"><span class="tag">history</span><span class="tag">podcast</span></div></div>
+          <div class="card"><div class="th i8"><span class="dur">18:03</span></div>
+            <div class="ttl">Slow-Cooked Ragù, the Long Way</div><div class="ch">Ethan Chlebowski</div>
+            <div class="tg"><span class="tag">cooking</span></div></div>
+          <div class="card st"><div class="th i5"><span class="sb"><span>✓</span></span><span class="dur">31:47</span></div>
+            <div class="ttl">Travis Picking, Properly Explained</div><div class="ch">Paul Davids</div>
+            <div class="tg"><span class="tag">guitar</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>2 · Tag detail — where browsing actually happens (dark)</h2>
+<p class="sub">UJ-3 step 3. Filter chips are <b>tags only</b>; channel, length, watched, freshness and dates all live behind <b>Filters</b>. Card 1 has its <code>+2</code> popover open; card 3 shows watched as scrim <em>plus</em> ✓ icon; card 4 carries the dashed keyboard-focus ring right beside card 2's solid selection outline, so you can see they no longer read alike.</p>
+<div class="frame">
+  <div class="lblbar">Dark · tag detail · filters applied</div>
+  <div class="app D">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav"><span class="ic">▤</span>Library</div>
+      <div class="nav"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav on"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">☰</span>Playlists<span class="p2">P2</span></div>
+      <div class="nav"><span class="ic">◷</span>Needs review<span class="p2">P2</span></div>
+      <div class="nav"><span class="ic">✓</span>Watched<span class="p2">P2</span></div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="top"><div class="search">Search your library</div><div class="spacer"></div>
+        <div class="vtog"><span class="on">▦ Grid</span><span>☰ List</span></div><div class="avatar"></div></div>
+      <div class="h1">guitar</div>
+      <div class="chips">
+        <span class="fc on">guitar</span><span class="fc">course</span><span class="fc">theory</span>
+        <span class="fc">gear</span><span class="fc allt">All tags →</span>
+        <span class="fbtn">⚙ Filters <b style="font-weight:650">1</b></span>
+        <span class="appliedb">≤ 60 min ×</span>
+        <span class="appliedb">· 8 videos</span>
+      </div>
+      <div class="grid4">
+        <div class="card rel"><div class="th i1"><span class="dur">42:18</span></div>
+          <div class="ttl">Fingerstyle Fundamentals — Lesson 4: Travis Picking</div>
+          <div class="ch">Paul Davids</div>
+          <div class="tg"><span class="tag">guitar</span><span class="tag">course</span><span class="tag more">+2</span></div>
+          <div class="pop" style="top:100%;left:0">
+            <span class="tag">guitar</span><span class="tag">course</span>
+            <span class="tag">fingerstyle</span><span class="tag">evergreen</span>
+          </div>
+        </div>
+        <div class="card sel"><div class="th i3"><span class="chk">✓</span><span class="dur">19:04</span></div>
+          <div class="ttl">Chord Theory in 20 Minutes</div><div class="ch">Signals Music Studio</div>
+          <div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+        <div class="card st"><div class="th i5"><span class="sb"><span>✓</span></span><span class="dur">31:47</span></div>
+          <div class="ttl">Travis Picking, Properly Explained</div><div class="ch">Paul Davids</div>
+          <div class="tg"><span class="tag">guitar</span></div></div>
+        <div class="card foc"><div class="th i7"><span class="dur">55:12</span></div>
+          <div class="ttl">Every Chord Shape You Actually Need</div><div class="ch">Music is Win</div>
+          <div class="tg"><span class="tag">guitar</span><span class="tag">course</span></div></div>
+        <div class="card"><div class="th i2"><span class="dur">27:33</span></div>
+          <div class="ttl">Fingerpicking Patterns for Beginners</div><div class="ch">JustinGuitar</div>
+          <div class="tg"><span class="tag">guitar</span></div></div>
+        <div class="card st"><div class="th i9"><span class="sb"><span>✓</span><span>⚠</span></span><span class="dur">12:41</span></div>
+          <div class="ttl">Setup and Intonation at Home</div><div class="ch">Darrell Braun Guitar</div>
+          <div class="tg"><span class="tag">guitar</span><span class="tag">gear</span></div></div>
+        <div class="card"><div class="th i8"><span class="dur">48:09</span></div>
+          <div class="ttl">The Blues Scale, Demystified Once and For All</div><div class="ch">Signals Music Studio</div>
+          <div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+        <div class="card"><div class="th i6"><span class="dur">38:55</span></div>
+          <div class="ttl">Alternate Tunings Worth Learning</div><div class="ch">Paul Davids</div>
+          <div class="tg"><span class="tag">guitar</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="sub" style="margin-top:14px">The sixth card carries <b>two</b> status icons (✓ watched, ⚠ unavailable) on a deliberately pale thumbnail — precisely the case where the old scrim-only treatment resolved to byte-identical color and vanished.</p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YouTube Organizer — Neutral Theme Directions</title>
+<style>
+/* ============================================================
+   YouTube Organizer — neutral palette directions
+   Constraint: brand is NEUTRAL. Red is reserved for destructive only.
+   Familiarity is carried structurally, not chromatically.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #e9e9ec; color: #18181b; padding: 32px 20px 64px;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; margin-bottom: 6px; }
+.lede { color: #52525b; max-width: 70ch; margin-bottom: 8px; }
+.note { color: #52525b; max-width: 70ch; font-size: 13px; margin-bottom: 28px; }
+.note b { color: #18181b; font-weight: 600; }
+
+.theme { margin-bottom: 40px; background: #fff; border: 1px solid #d4d4d8; border-radius: 12px; overflow: hidden; }
+.theme > header { padding: 14px 18px; border-bottom: 1px solid #e4e4e7; display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+.theme h2 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.theme .reg { color: #71717a; font-size: 13px; }
+.theme .verdict { margin-left: auto; font-size: 12px; color: #3f3f46; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 999px; padding: 3px 10px; }
+
+.modes { display: grid; grid-template-columns: 1fr 1fr; }
+@media (max-width: 860px) { .modes { grid-template-columns: 1fr; } }
+.mode { padding: 18px; }
+.mode + .mode { border-left: 1px solid #e4e4e7; }
+@media (max-width: 860px) { .mode + .mode { border-left: 0; border-top: 1px solid #e4e4e7; } }
+.mode > .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #a1a1aa; margin-bottom: 12px; font-weight: 600; }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 8px 3px 4px; border-radius: 6px; background: rgba(128,128,128,.10); border: 1px solid rgba(128,128,128,.18); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(128,128,128,.35); flex: none; }
+
+/* app snippet */
+.app { border-radius: 10px; overflow: hidden; border: 1px solid; display: grid; grid-template-columns: 132px 1fr; min-height: 300px; }
+@media (max-width: 500px) { .app { grid-template-columns: 1fr; } .app .side { display: none; } }
+.side { padding: 10px 8px; border-right: 1px solid; }
+.nav { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 7px; font-size: 12.5px; margin-bottom: 1px; }
+.nav .ic { width: 15px; text-align: center; opacity: .75; flex: none; font-size: 12px; }
+.main { padding: 12px 14px; }
+.topbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.search { flex: 1; border: 1px solid; border-radius: 999px; padding: 5px 12px; font-size: 12px; }
+.viewtog { display: flex; border: 1px solid; border-radius: 7px; overflow: hidden; }
+.viewtog span { padding: 4px 9px; font-size: 11px; }
+.filters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.fchip { font-size: 11px; padding: 3.5px 10px; border-radius: 999px; border: 1px solid; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card .thumb { aspect-ratio: 16/9; border-radius: 8px; display: flex; align-items: flex-end; justify-content: flex-end; padding: 5px; position: relative; }
+.card .dur { font-size: 10px; padding: 1px 4px; border-radius: 3px; background: rgba(0,0,0,.82); color: #fff; font-variant-numeric: tabular-nums; }
+.card .ttl { font-size: 12.5px; font-weight: 600; line-height: 1.3; margin: 7px 0 2px; }
+.card .ch { font-size: 11.5px; }
+.card .tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.tag { font-size: 10px; padding: 1.5px 7px; border-radius: 999px; border: 1px solid; }
+
+.selected .thumb { outline: 3px solid; outline-offset: 2px; }
+.check { position: absolute; top: 5px; left: 5px; width: 17px; height: 17px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+
+.danger { margin-top: 14px; display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: 8px; border: 1px solid; font-size: 11.5px; }
+.btn-danger { margin-left: auto; font-size: 11px; padding: 4px 11px; border-radius: 6px; font-weight: 600; }
+
+/* ============================================================
+   THEME A — YOUTUBE TRUE
+   light: bg #ffffff  surface #f9f9f9  text #0f0f0f  muted #606060
+          border #e5e5e5  thumb #e5e5e5  selected #0f0f0f
+   dark:  bg #0f0f0f  surface #272727  text #f1f1f1  muted #aaaaaa
+          border #303030  thumb #303030  selected #f1f1f1
+   destructive: #cc0000 (light) / #ff4e45 (dark)
+   ============================================================ */
+.a-l { --bg:#fff; --surf:#f9f9f9; --tx:#0f0f0f; --mu:#606060; --bd:#e5e5e5; --th:#e5e5e5; --sel:#0f0f0f; --selfg:#fff; --dg:#cc0000; --dgbg:#fdf0f0; }
+.a-d { --bg:#0f0f0f; --surf:#272727; --tx:#f1f1f1; --mu:#aaa;    --bd:#303030; --th:#303030; --sel:#f1f1f1; --selfg:#0f0f0f; --dg:#ff4e45; --dgbg:#2a1413; }
+
+/* ============================================================
+   THEME B — WARM SHELF   (stone/sand neutrals; physical library)
+   light: bg #faf9f7  surface #f2f0ed  text #1c1917  muted #78716c
+          border #e7e5e4  thumb #e7e5e4
+   dark:  bg #1c1917  surface #292524  text #f5f5f4  muted #a8a29e
+          border #3a3532  thumb #3a3532
+   destructive: #b91c1c / #f87171
+   ============================================================ */
+.b-l { --bg:#faf9f7; --surf:#f2f0ed; --tx:#1c1917; --mu:#78716c; --bd:#e7e5e4; --th:#e7e5e4; --sel:#1c1917; --selfg:#faf9f7; --dg:#b91c1c; --dgbg:#fdf2f2; }
+.b-d { --bg:#1c1917; --surf:#292524; --tx:#f5f5f4; --mu:#a8a29e; --bd:#3a3532; --th:#3a3532; --sel:#f5f5f4; --selfg:#1c1917; --dg:#f87171; --dgbg:#2e1a18; }
+
+/* ============================================================
+   THEME C — COOL ARCHIVE   (slate/zinc; software-tool register)
+   light: bg #ffffff  surface #f4f4f5  text #18181b  muted #71717a
+          border #e4e4e7  thumb #e4e4e7
+   dark:  bg #09090b  surface #18181b  text #fafafa  muted #a1a1aa
+          border #27272a  thumb #27272a
+   destructive: #dc2626 / #ef4444
+   ============================================================ */
+.c-l { --bg:#fff;    --surf:#f4f4f5; --tx:#18181b; --mu:#71717a; --bd:#e4e4e7; --th:#e4e4e7; --sel:#18181b; --selfg:#fff; --dg:#dc2626; --dgbg:#fef2f2; }
+.c-d { --bg:#09090b; --surf:#18181b; --tx:#fafafa; --mu:#a1a1aa; --bd:#27272a; --th:#27272a; --sel:#fafafa; --selfg:#09090b; --dg:#ef4444; --dgbg:#2a1215; }
+
+/* ============================================================
+   THEME D — PAPER & INK   (max contrast, minimal midtones, editorial)
+   light: bg #fffffe  surface #ffffff  text #000000  muted #4a4a4a
+          border #000000 @ 14%  thumb #ededed
+   dark:  bg #000000  surface #121212  text #ffffff  muted #9e9e9e
+          border #ffffff @ 15%  thumb #1f1f1f
+   destructive: #d10000 / #ff5252
+   ============================================================ */
+.d-l { --bg:#fffffe; --surf:#fff;    --tx:#000; --mu:#4a4a4a; --bd:rgba(0,0,0,.14);  --th:#ededed; --sel:#000; --selfg:#fff; --dg:#d10000; --dgbg:#fff5f5; }
+.d-d { --bg:#000;    --surf:#121212; --tx:#fff; --mu:#9e9e9e; --bd:rgba(255,255,255,.15); --th:#1f1f1f; --sel:#fff; --selfg:#000; --dg:#ff5252; --dgbg:#1c0f0f; }
+
+/* bind vars */
+.app { background: var(--bg); color: var(--tx); border-color: var(--bd); }
+.side { border-color: var(--bd); }
+.nav { color: var(--tx); }
+.nav.on { background: var(--surf); font-weight: 650; }
+.nav.mut { color: var(--mu); }
+.search { border-color: var(--bd); background: var(--surf); color: var(--mu); }
+.viewtog { border-color: var(--bd); }
+.viewtog span { color: var(--mu); }
+.viewtog span.on { background: var(--surf); color: var(--tx); font-weight: 600; }
+.fchip { border-color: var(--bd); background: var(--bg); color: var(--mu); }
+.fchip.on { background: var(--sel); color: var(--selfg); border-color: var(--sel); font-weight: 600; }
+.card .thumb { background: var(--th); }
+.card .ttl { color: var(--tx); }
+.card .ch { color: var(--mu); }
+.tag { border-color: var(--bd); background: var(--surf); color: var(--mu); }
+.selected .thumb { outline-color: var(--sel); }
+.check { background: var(--sel); color: var(--selfg); }
+.danger { border-color: var(--dg); background: var(--dgbg); color: var(--dg); }
+.btn-danger { background: var(--dg); color: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Neutral palette directions — YouTube Organizer</h1>
+<p class="lede">Four flavors of neutral, light and dark side by side. Red appears <em>only</em> in the destructive strip at the bottom of each — that is the whole point of the decision you made.</p>
+<p class="note">Each snippet shows the same real moment: <b>the Library, mid-triage, with three videos multi-selected.</b> Watch how <b>selection</b> reads in each theme — that's the thing neutral has to solve, since you have no accent hue to spend on it. Exact hex values are in the <code>&lt;style&gt;</code> comments if you want to lift one.</p>
+
+<!-- ================= A ================= -->
+<section class="theme">
+  <header>
+    <h2>A · YouTube True</h2>
+    <span class="reg">YouTube's actual values, lifted exactly. Pure grey, no temperature.</span>
+    <span class="verdict">maximum familiarity</span>
+  </header>
+  <div class="modes">
+    <div class="mode a-l">
+      <div class="lbl">Light</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#fff"></span>bg #ffffff</span>
+        <span class="chip"><span class="sw" style="background:#f9f9f9"></span>surface #f9f9f9</span>
+        <span class="chip"><span class="sw" style="background:#0f0f0f"></span>text #0f0f0f</span>
+        <span class="chip"><span class="sw" style="background:#606060"></span>muted #606060</span>
+        <span class="chip"><span class="sw" style="background:#cc0000"></span>destructive #cc0000</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mode a-d">
+      <div class="lbl">Dark</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#0f0f0f"></span>bg #0f0f0f</span>
+        <span class="chip"><span class="sw" style="background:#272727"></span>surface #272727</span>
+        <span class="chip"><span class="sw" style="background:#f1f1f1"></span>text #f1f1f1</span>
+        <span class="chip"><span class="sw" style="background:#aaa"></span>muted #aaaaaa</span>
+        <span class="chip"><span class="sw" style="background:#ff4e45"></span>destructive #ff4e45</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="theme">
+  <header>
+    <h2>B · Warm Shelf</h2>
+    <span class="reg">Sand/stone neutrals. Reads like a physical library rather than software.</span>
+    <span class="verdict">calmest · least YouTube</span>
+  </header>
+  <div class="modes">
+    <div class="mode b-l">
+      <div class="lbl">Light</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#faf9f7"></span>bg #faf9f7</span>
+        <span class="chip"><span class="sw" style="background:#f2f0ed"></span>surface #f2f0ed</span>
+        <span class="chip"><span class="sw" style="background:#1c1917"></span>text #1c1917</span>
+        <span class="chip"><span class="sw" style="background:#78716c"></span>muted #78716c</span>
+        <span class="chip"><span class="sw" style="background:#b91c1c"></span>destructive #b91c1c</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mode b-d">
+      <div class="lbl">Dark</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#1c1917"></span>bg #1c1917</span>
+        <span class="chip"><span class="sw" style="background:#292524"></span>surface #292524</span>
+        <span class="chip"><span class="sw" style="background:#f5f5f4"></span>text #f5f5f4</span>
+        <span class="chip"><span class="sw" style="background:#a8a29e"></span>muted #a8a29e</span>
+        <span class="chip"><span class="sw" style="background:#f87171"></span>destructive #f87171</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="theme">
+  <header>
+    <h2>C · Cool Archive</h2>
+    <span class="reg">shadcn <code>neutral</code>/zinc, straight out of the box. Crisp, software-tool register.</span>
+    <span class="verdict">zero config drift</span>
+  </header>
+  <div class="modes">
+    <div class="mode c-l">
+      <div class="lbl">Light</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#fff"></span>bg #ffffff</span>
+        <span class="chip"><span class="sw" style="background:#f4f4f5"></span>surface #f4f4f5</span>
+        <span class="chip"><span class="sw" style="background:#18181b"></span>text #18181b</span>
+        <span class="chip"><span class="sw" style="background:#71717a"></span>muted #71717a</span>
+        <span class="chip"><span class="sw" style="background:#dc2626"></span>destructive #dc2626</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mode c-d">
+      <div class="lbl">Dark</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#09090b"></span>bg #09090b</span>
+        <span class="chip"><span class="sw" style="background:#18181b"></span>surface #18181b</span>
+        <span class="chip"><span class="sw" style="background:#fafafa"></span>text #fafafa</span>
+        <span class="chip"><span class="sw" style="background:#a1a1aa"></span>muted #a1a1aa</span>
+        <span class="chip"><span class="sw" style="background:#ef4444"></span>destructive #ef4444</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= D ================= -->
+<section class="theme">
+  <header>
+    <h2>D · Paper &amp; Ink</h2>
+    <span class="reg">Max contrast, almost no midtones. Thumbnails carry all the color in the room.</span>
+    <span class="verdict">most opinionated</span>
+  </header>
+  <div class="modes">
+    <div class="mode d-l">
+      <div class="lbl">Light</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#fffffe"></span>bg #fffffe</span>
+        <span class="chip"><span class="sw" style="background:#fff"></span>surface #ffffff</span>
+        <span class="chip"><span class="sw" style="background:#000"></span>text #000000</span>
+        <span class="chip"><span class="sw" style="background:#4a4a4a"></span>muted #4a4a4a</span>
+        <span class="chip"><span class="sw" style="background:#d10000"></span>destructive #d10000</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mode d-d">
+      <div class="lbl">Dark</div>
+      <div class="chips">
+        <span class="chip"><span class="sw" style="background:#000"></span>bg #000000</span>
+        <span class="chip"><span class="sw" style="background:#121212"></span>surface #121212</span>
+        <span class="chip"><span class="sw" style="background:#fff"></span>text #ffffff</span>
+        <span class="chip"><span class="sw" style="background:#9e9e9e"></span>muted #9e9e9e</span>
+        <span class="chip"><span class="sw" style="background:#ff5252"></span>destructive #ff5252</span>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="nav on"><span class="ic">▤</span>Library</div>
+          <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+          <div class="nav mut"><span class="ic">#</span>Tags</div>
+          <div class="nav mut"><span class="ic">☰</span>Playlists</div>
+          <div class="nav mut"><span class="ic">◷</span>Needs review</div>
+          <div class="nav mut"><span class="ic">✓</span>Watched</div>
+          <div class="nav mut"><span class="ic">🗑</span>Trash</div>
+        </div>
+        <div class="main">
+          <div class="topbar">
+            <div class="search">Search your library</div>
+            <div class="viewtog"><span class="on">▦</span><span>☰</span></div>
+          </div>
+          <div class="filters">
+            <span class="fchip on">guitar</span><span class="fchip">barca</span><span class="fchip">podcast</span><span class="fchip">≤ 60 min</span>
+          </div>
+          <div class="grid">
+            <div class="card selected">
+              <div class="thumb"><span class="check">✓</span><span class="dur">42:18</span></div>
+              <div class="ttl">Fingerstyle Fundamentals — Lesson 4</div>
+              <div class="ch">Paul Davids</div>
+              <div class="tags"><span class="tag">guitar</span><span class="tag">course</span></div>
+            </div>
+            <div class="card">
+              <div class="thumb"><span class="dur">1:47:02</span></div>
+              <div class="ttl">The Fall of Constantinople, in full</div>
+              <div class="ch">Fall of Civilizations</div>
+              <div class="tags"><span class="tag">history</span><span class="tag">podcast</span></div>
+            </div>
+          </div>
+          <div class="danger">⚠ 3 videos selected <span class="btn-danger">Delete</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
