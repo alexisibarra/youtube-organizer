@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen — Watch (no rail)</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Watch — the absent-rail page. UJ-3 steps 6-8.
+   Governed by:
+     EXPERIENCE.md § Subtraction Contract (rail absent at EVERY breakpoint;
+                     no comments, no recommendations, no autoplay-next)
+                   § Component Patterns (tag chip inline-editable on watch)
+                   § State Patterns (unavailable video)
+                   § Key Flows UJ-3 steps 6-8
+     DESIGN.md § Layout & Spacing (single column, player-max-width 1280)
+               § Do's and Don'ts ("Don't add a right rail — for anything")
+   Rendered: canonical state + the unavailable-video alternate state.
+   The right third of the frame is INTENTIONALLY EMPTY. That is the design.
+   NOTE: production typeface is Geist Sans. System stack used per offline rule.
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e9e9ec;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1300px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;color:#18181b;margin-bottom:4px}
+.cap{color:#52525b;font-size:13px;margin-bottom:18px;max-width:84ch}
+h2{font-size:15px;font-weight:650;color:#18181b;margin:28px 0 5px;letter-spacing:-.011em}
+.sub{color:#52525b;font-size:12.5px;margin-bottom:12px;max-width:84ch}
+.frame{border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14)}
+.bar{background:#dcdce0;padding:8px 12px;display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;background:#c2c2c8}
+.url{flex:1;background:#f1f1f4;border-radius:6px;font-size:11px;color:#71717a;padding:3px 10px;margin-left:6px}
+.lblbar{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+        padding:6px 12px;background:#18181b;color:#a1a1aa}
+
+.app{display:grid;grid-template-columns:240px 1fr;min-height:660px}
+.L{--bg:#fff;--surf:#f4f4f5;--tx:#18181b;--mu:#71717a;--bd:#e4e4e7;--inv:#18181b;--invfg:#fff}
+.D{--bg:#09090b;--surf:#18181b;--tx:#fafafa;--mu:#a1a1aa;--bd:#27272a;--inv:#fafafa;--invfg:#09090b}
+.app{background:var(--bg);color:var(--tx)}
+.side{border-right:1px solid var(--bd);padding:12px 10px}
+.brand{font-size:15px;font-weight:650;letter-spacing:-.011em;padding:4px 10px 14px}
+.nav{display:flex;align-items:center;gap:11px;padding:8px 11px;border-radius:6px;font-size:12px;margin-bottom:2px;color:var(--mu)}
+.nav .ic{width:16px;text-align:center;opacity:.7;font-size:13px;flex:none}
+.nav.on{background:var(--surf);color:var(--tx);font-weight:650}
+.sep{height:1px;background:var(--bd);margin:9px 6px}
+
+.main{padding:18px 24px}
+.col{max-width:900px}          /* single column, centered-ish, capped */
+.player{aspect-ratio:16/9;border-radius:12px;background:#000;position:relative;overflow:hidden;
+        display:flex;align-items:center;justify-content:center}
+.player .art{position:absolute;inset:0;background:linear-gradient(135deg,#8b5cf6,#ec4899);opacity:.9}
+.play{position:relative;width:62px;height:62px;border-radius:9999px;background:rgba(0,0,0,.62);
+      color:#fff;font-size:23px;line-height:62px;text-align:center}
+.pbar{position:absolute;left:0;right:0;bottom:0;height:38px;background:linear-gradient(transparent,rgba(0,0,0,.72));
+      display:flex;align-items:flex-end;padding:0 12px 9px;gap:10px}
+.track{flex:1;height:3px;background:rgba(255,255,255,.32);border-radius:9999px;position:relative}
+.track i{position:absolute;left:0;top:0;bottom:0;width:38%;background:#fff;border-radius:9999px}
+.ptime{font-size:10.5px;color:#fff;font-variant-numeric:tabular-nums}
+
+.vtitle{font-size:20px;font-weight:650;letter-spacing:-.02em;margin:16px 0 7px;line-height:1.25}
+.meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu);margin-bottom:14px}
+.meta .ch{font-weight:600;color:var(--tx)}
+.meta .sp{flex:1}
+.act{font-size:12px;padding:6px 13px;border-radius:6px;border:1px solid var(--bd);color:var(--tx)}
+
+/* inline-editable tag row — the app's addition */
+.tagrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 0;
+        border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);margin-bottom:14px}
+.tagrow .lab{font-size:11.5px;color:var(--mu);margin-right:4px}
+.tg{font-size:11.5px;padding:3px 10px;border-radius:9999px;border:1px solid var(--bd);background:var(--surf);color:var(--tx);
+    display:inline-flex;align-items:center;gap:6px}
+.tg .x{color:var(--mu);font-size:11px}
+.tgadd{font-size:11.5px;padding:3px 11px;border-radius:9999px;border:1px dashed var(--bd);color:var(--mu)}
+
+/* playlist position — Phase 2, manual only */
+.plpos{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu);margin-bottom:14px}
+.plpos .nm{color:var(--tx);font-weight:500}
+.plpos .nav2{margin-left:auto;display:flex;gap:6px}
+.plpos .nav2 span{font-size:11.5px;padding:4px 11px;border-radius:6px;border:1px solid var(--bd);color:var(--tx)}
+.plnote{font-size:10.5px;color:var(--mu);opacity:.8}
+
+.desc{font-size:13px;color:var(--tx);line-height:1.55;background:var(--surf);border-radius:8px;padding:13px 15px}
+.desc .more{display:block;margin-top:7px;font-size:12px;color:var(--mu);font-weight:600}
+.dates{font-size:11.5px;color:var(--mu);margin-top:12px;font-variant-numeric:tabular-nums}
+
+/* the emptiness, annotated */
+.voidnote{border:1px dashed var(--bd);border-radius:8px;padding:14px 16px;margin-top:26px;
+          font-size:12px;color:var(--mu);line-height:1.6;max-width:900px}
+.voidnote b{color:var(--tx)}
+
+/* unavailable state */
+.unav{aspect-ratio:16/9;border-radius:12px;background:var(--surf);border:1px solid var(--bd);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+.unav .msg{font-size:15px;font-weight:600;letter-spacing:-.011em;color:var(--tx)}
+.unav .row{display:flex;gap:8px}
+.unav .b1{font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--bd);color:var(--tx)}
+.unav .b2{font-size:12px;padding:6px 14px;border-radius:6px;background:#dc2626;color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Watch — the absent rail</h1>
+<p class="cap">The point of this mock is the <b>right third of the screen</b>. On YouTube that space holds recommendations; here it holds nothing, at every breakpoint. Check whether the emptiness reads as deliberate or as unfinished — that judgement is the whole reason this screen got mocked.</p>
+
+<h2>1 · Canonical state — light</h2>
+<p class="sub">Playing a guitar lesson opened from the filtered Library. Tag row is inline-editable (UJ-3 step 7). Description collapsed behind “…more”. Playlist position shown as a Phase-2 preview with <b>manual</b> prev/next — nothing ever auto-advances.</p>
+<div class="frame">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="url">localhost:3000/watch/dQw4w9WgXcQ</span></div>
+  <div class="lblbar">Light · playing</div>
+  <div class="app L">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav on"><span class="ic">▤</span>Library</div>
+      <div class="nav"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">☰</span>Playlists</div>
+      <div class="nav"><span class="ic">◷</span>Needs review</div>
+      <div class="nav"><span class="ic">✓</span>Watched</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="col">
+        <div class="player">
+          <div class="art"></div>
+          <div class="play">▶</div>
+          <div class="pbar"><span class="ptime">16:04</span><span class="track"><i></i></span><span class="ptime">42:18</span></div>
+        </div>
+        <div class="vtitle">Fingerstyle Fundamentals — Lesson 4: Travis Picking</div>
+        <div class="meta">
+          <span class="ch">Paul Davids</span><span>·</span><span>42:18</span><span>·</span><span>published 14 Mar 2024</span>
+          <span class="sp"></span>
+          <span class="act">Open in YouTube ↗</span>
+          <span class="act">⋮</span>
+        </div>
+        <div class="tagrow">
+          <span class="lab">Tags</span>
+          <span class="tg">guitar <span class="x">×</span></span>
+          <span class="tg">course <span class="x">×</span></span>
+          <span class="tgadd">+ Add tag</span>
+        </div>
+        <div class="plpos">
+          <span>Playing from</span><span class="nm">Guitar Course Vol.1</span><span>· 4 of 9</span>
+          <span class="nav2"><span>← Previous</span><span>Next →</span></span>
+        </div>
+        <div class="plnote" style="margin:-8px 0 14px">Manual only — nothing advances on its own.</div>
+        <div class="desc">
+          In this lesson we break down Travis picking from the thumb up — independence first, then the melody on top. Tab and backing track linked below.
+          <span class="more">…more</span>
+        </div>
+        <div class="dates">Imported 21 Jul 2026 · added to <code>_Inbox</code> 18 Jul 2026 · published 14 Mar 2024</div>
+      </div>
+      <div class="voidnote">
+        <b>This region is intentionally empty.</b> On YouTube it holds the recommended-videos rail. Here it holds nothing — not the user's own queue, not "up next", not related videos. The rail is <b>absent, not collapsed</b>: it does not exist at any breakpoint. Occupying this space at all retrains the "what's next" reflex the product exists to break. <em>(This annotation is mock-only and does not ship.)</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>2 · Dark, and the unavailable-video state</h2>
+<p class="sub">Right: a video YouTube no longer serves (FR-19). A clear message, never a broken player, and two ways out.</p>
+<div class="frame">
+  <div class="lblbar">Dark · unavailable</div>
+  <div class="app D">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav on"><span class="ic">▤</span>Library</div>
+      <div class="nav"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">☰</span>Playlists</div>
+      <div class="nav"><span class="ic">◷</span>Needs review</div>
+      <div class="nav"><span class="ic">✓</span>Watched</div>
+      <div class="sep"></div>
+      <div class="nav"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="col">
+        <div class="unav">
+          <div class="msg">This video is no longer available on YouTube.</div>
+          <div class="row"><span class="b1">Open in YouTube ↗</span><span class="b2">Delete</span></div>
+        </div>
+        <div class="vtitle">Barça 5–0 Real Sociedad — Extended Highlights</div>
+        <div class="meta">
+          <span class="ch">FC Barcelona</span><span>·</span><span>8:22</span><span>·</span><span>published 4 Feb 2025</span>
+          <span class="sp"></span><span class="act">⋮</span>
+        </div>
+        <div class="tagrow">
+          <span class="lab">Tags</span>
+          <span class="tg">barca <span class="x">×</span></span>
+          <span class="tg">highlights <span class="x">×</span></span>
+          <span class="tgadd">+ Add tag</span>
+        </div>
+        <div class="dates">Imported 2 Mar 2025 · added to <code>_Inbox</code> 28 Feb 2025 · published 4 Feb 2025</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

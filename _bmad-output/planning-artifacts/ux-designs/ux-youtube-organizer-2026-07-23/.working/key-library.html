@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Key screen — Library (browse grid)</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Library — the browse grid. UJ-3 payoff surface.
+   Governed by:
+     DESIGN.md § Colors (Theme C neutral), § Shapes (12px thumbnail),
+                § Layout & Spacing (240px sidebar, 16px gutter, 4 cols @xl),
+                § Elevation (cards float — no border/fill/shadow),
+                § Components (video-card, filter-chip, tag-chip, view toggle)
+     EXPERIENCE.md § Information Architecture (sidebar order)
+                   § Component Patterns (filter chip row, tag chip, view toggle)
+                   § Subtraction Contract (no feed, no recommendations, no badge)
+                   § Key Flows UJ-3 steps 1-4
+   Shown state: filters active (guitar + <=60 min), grid view, light AND dark.
+   NOTE: production typeface is Geist Sans via next/font. This mock uses the
+   system stack per the offline-rendering rule; proportions are representative.
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e9e9ec;padding:26px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1500px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;color:#18181b;margin-bottom:4px}
+.cap{color:#52525b;font-size:13px;margin-bottom:20px;max-width:80ch}
+.frame{border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14);margin-bottom:26px}
+.bar{background:#dcdce0;padding:8px 12px;display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;background:#c2c2c8}
+.url{flex:1;background:#f1f1f4;border-radius:6px;font-size:11px;color:#71717a;padding:3px 10px;margin-left:6px}
+.lblbar{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+        padding:6px 12px;background:#18181b;color:#a1a1aa}
+
+/* theme C */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:620px}
+.L{--bg:#fff;--surf:#f4f4f5;--tx:#18181b;--mu:#71717a;--bd:#e4e4e7;--th:#e4e4e7;--inv:#18181b;--invfg:#fff}
+.D{--bg:#09090b;--surf:#18181b;--tx:#fafafa;--mu:#a1a1aa;--bd:#27272a;--th:#27272a;--inv:#fafafa;--invfg:#09090b}
+.app{background:var(--bg);color:var(--tx)}
+
+/* sidebar */
+.side{border-right:1px solid var(--bd);padding:12px 10px}
+.brand{font-size:15px;font-weight:650;letter-spacing:-.011em;padding:4px 10px 14px}
+.nav{display:flex;align-items:center;gap:11px;padding:8px 11px;border-radius:6px;font-size:12px;margin-bottom:2px;color:var(--tx)}
+.nav .ic{width:16px;text-align:center;opacity:.7;font-size:13px;flex:none}
+.nav.on{background:var(--surf);font-weight:650}
+.nav.mut{color:var(--mu)}
+.nav .p2{margin-left:auto;font-size:9px;color:var(--mu);opacity:.65;letter-spacing:.04em}
+.sep{height:1px;background:var(--bd);margin:9px 6px}
+.sublist{padding-left:30px}
+.sublist div{font-size:11.5px;color:var(--mu);padding:5px 0}
+
+/* main */
+.main{padding:16px 22px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.search{flex:1;max-width:520px;border:1px solid var(--bd);background:var(--surf);border-radius:9999px;
+        padding:7px 16px;font-size:12.5px;color:var(--mu)}
+.spacer{flex:1}
+.vtog{display:flex;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.vtog span{padding:5px 11px;font-size:12px;color:var(--mu)}
+.vtog span.on{background:var(--surf);color:var(--tx);font-weight:600}
+.avatar{width:28px;height:28px;border-radius:9999px;background:var(--surf);border:1px solid var(--bd)}
+
+.h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin-bottom:10px}
+.chips{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.fc{font-size:11.5px;padding:5px 13px;border-radius:9999px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);white-space:nowrap}
+.fc.on{background:var(--inv);color:var(--invfg);border-color:var(--inv);font-weight:600}
+.fc.clear{border-style:dashed}
+.count{font-size:11.5px;color:var(--mu);margin-left:4px}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card .th{aspect-ratio:16/9;background:var(--th);border-radius:12px;position:relative;overflow:hidden}
+.card .dur{position:absolute;right:6px;bottom:6px;font-size:10.5px;padding:1.5px 5px;border-radius:4px;
+           background:rgba(0,0,0,.82);color:#fff;font-variant-numeric:tabular-nums}
+.card .ttl{font-size:13.5px;font-weight:600;line-height:1.32;letter-spacing:-.011em;margin:9px 0 3px;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .ch{font-size:12px;color:var(--mu)}
+.card .tg{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:2px 8px;border-radius:9999px;border:1px solid var(--bd);background:var(--surf);color:var(--mu)}
+/* watched = scrim + badge, silent-unless-abnormal */
+.watched .th::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.55)}
+.D .watched .th::after{background:rgba(9,9,11,.60)}
+.wb{position:absolute;left:6px;bottom:6px;font-size:10px;padding:1.5px 6px;border-radius:4px;
+    background:var(--inv);color:var(--invfg);font-weight:600;z-index:2}
+/* fake thumbnail imagery so the neutral chrome is judged against loud content */
+.i1{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
+.i2{background:linear-gradient(135deg,#0ea5e9,#14532d)}
+.i3{background:linear-gradient(135deg,#f59e0b,#dc2626)}
+.i4{background:linear-gradient(135deg,#334155,#0f172a)}
+.i5{background:linear-gradient(135deg,#10b981,#065f46)}
+.i6{background:linear-gradient(135deg,#e11d48,#7c2d12)}
+.i7{background:linear-gradient(135deg,#6366f1,#1e1b4b)}
+.i8{background:linear-gradient(135deg,#a16207,#422006)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Library — the browse grid</h1>
+<p class="cap">UJ-3 at step 3: filtered to <b>guitar</b> + <b>≤ 60 min</b>. Note what is absent — no feed, no recommendations, no "Home", and <b>no count badge on Uncategorized</b>. Thumbnails are deliberately loud gradients here so you can judge whether the achromatic chrome holds up against real clickbait imagery.</p>
+
+<!-- LIGHT -->
+<div class="frame">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="url">localhost:3000/library?tag=guitar&amp;length=lte60</span></div>
+  <div class="lblbar">Light</div>
+  <div class="app L">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav on"><span class="ic">▤</span>Library</div>
+      <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav mut"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav mut"><span class="ic">☰</span>Playlists<span class="p2">P2</span></div>
+      <div class="sublist"><div>Guitar Course Vol.1</div><div>Cooking podcasts</div></div>
+      <div class="nav mut"><span class="ic">◷</span>Needs review<span class="p2">P2</span></div>
+      <div class="nav mut"><span class="ic">✓</span>Watched<span class="p2">P2</span></div>
+      <div class="sep"></div>
+      <div class="nav mut"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="top">
+        <div class="search">Search your library</div>
+        <div class="spacer"></div>
+        <div class="vtog"><span class="on">▦ Grid</span><span>☰ List</span></div>
+        <div class="avatar"></div>
+      </div>
+      <div class="h1">Library</div>
+      <div class="chips">
+        <span class="fc on">guitar</span>
+        <span class="fc on">≤ 60 min</span>
+        <span class="fc">barca</span><span class="fc">podcast</span><span class="fc">history</span>
+        <span class="fc">Channel</span><span class="fc">Unwatched</span>
+        <span class="fc clear">Clear all</span>
+        <span class="count">8 videos</span>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="th i1"><span class="dur">42:18</span></div>
+          <div class="ttl">Fingerstyle Fundamentals — Lesson 4: Travis Picking</div>
+          <div class="ch">Paul Davids</div><div class="tg"><span class="tag">guitar</span><span class="tag">course</span></div></div>
+        <div class="card"><div class="th i3"><span class="dur">19:04</span></div>
+          <div class="ttl">Chord Theory in 20 Minutes</div>
+          <div class="ch">Signals Music Studio</div><div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+        <div class="card watched"><div class="th i5"><span class="wb">Watched</span><span class="dur">31:47</span></div>
+          <div class="ttl">Travis Picking, Properly Explained</div>
+          <div class="ch">Paul Davids</div><div class="tg"><span class="tag">guitar</span></div></div>
+        <div class="card"><div class="th i7"><span class="dur">55:12</span></div>
+          <div class="ttl">Every Chord Shape You Actually Need</div>
+          <div class="ch">Music is Win</div><div class="tg"><span class="tag">guitar</span><span class="tag">course</span></div></div>
+        <div class="card"><div class="th i2"><span class="dur">27:33</span></div>
+          <div class="ttl">Fingerpicking Patterns for Beginners</div>
+          <div class="ch">JustinGuitar</div><div class="tg"><span class="tag">guitar</span></div></div>
+        <div class="card"><div class="th i8"><span class="dur">48:09</span></div>
+          <div class="ttl">The Blues Scale, Demystified Once and For All</div>
+          <div class="ch">Signals Music Studio</div><div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+        <div class="card"><div class="th i6"><span class="dur">12:41</span></div>
+          <div class="ttl">Setup and Intonation at Home</div>
+          <div class="ch">Darrell Braun Guitar</div><div class="tg"><span class="tag">guitar</span><span class="tag">gear</span></div></div>
+        <div class="card watched"><div class="th i4"><span class="wb">Watched</span><span class="dur">38:55</span></div>
+          <div class="ttl">Alternate Tunings Worth Learning</div>
+          <div class="ch">Paul Davids</div><div class="tg"><span class="tag">guitar</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DARK -->
+<div class="frame">
+  <div class="lblbar">Dark</div>
+  <div class="app D">
+    <div class="side">
+      <div class="brand">YouTube Organizer</div>
+      <div class="nav on"><span class="ic">▤</span>Library</div>
+      <div class="nav mut"><span class="ic">◍</span>Uncategorized</div>
+      <div class="nav mut"><span class="ic">#</span>Tags</div>
+      <div class="sep"></div>
+      <div class="nav mut"><span class="ic">☰</span>Playlists<span class="p2">P2</span></div>
+      <div class="sublist"><div>Guitar Course Vol.1</div><div>Cooking podcasts</div></div>
+      <div class="nav mut"><span class="ic">◷</span>Needs review<span class="p2">P2</span></div>
+      <div class="nav mut"><span class="ic">✓</span>Watched<span class="p2">P2</span></div>
+      <div class="sep"></div>
+      <div class="nav mut"><span class="ic">⌫</span>Trash</div>
+    </div>
+    <div class="main">
+      <div class="top">
+        <div class="search">Search your library</div>
+        <div class="spacer"></div>
+        <div class="vtog"><span class="on">▦ Grid</span><span>☰ List</span></div>
+        <div class="avatar"></div>
+      </div>
+      <div class="h1">Library</div>
+      <div class="chips">
+        <span class="fc on">guitar</span>
+        <span class="fc on">≤ 60 min</span>
+        <span class="fc">barca</span><span class="fc">podcast</span><span class="fc">history</span>
+        <span class="fc">Channel</span><span class="fc">Unwatched</span>
+        <span class="fc clear">Clear all</span>
+        <span class="count">8 videos</span>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="th i1"><span class="dur">42:18</span></div>
+          <div class="ttl">Fingerstyle Fundamentals — Lesson 4: Travis Picking</div>
+          <div class="ch">Paul Davids</div><div class="tg"><span class="tag">guitar</span><span class="tag">course</span></div></div>
+        <div class="card"><div class="th i3"><span class="dur">19:04</span></div>
+          <div class="ttl">Chord Theory in 20 Minutes</div>
+          <div class="ch">Signals Music Studio</div><div class="tg"><span class="tag">guitar</span><span class="tag">theory</span></div></div>
+        <div class="card watched"><div class="th i5"><span class="wb">Watched</span><span class="dur">31:47</span></div>
+          <div class="ttl">Travis Picking, Properly Explained</div>
+          <div class="ch">Paul Davids</div><div class="tg"><span class="tag">guitar</span></div></div>
+        <div class="card"><div class="th i7"><span class="dur">55:12</span></div>
+          <div class="ttl">Every Chord Shape You Actually Need</div>
+          <div class="ch">Music is Win</div><div class="tg"><span class="tag">guitar</span><span class="tag">course</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
