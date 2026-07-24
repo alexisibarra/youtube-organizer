@@ -2,6 +2,38 @@
 
 > How we gate code in this project: local git hooks, GitHub Actions CI, the PR template, changesets, and deployment. Mirror this setup on the other project. Everything below is read from the live `.github/`, `.githooks/`, and `.changeset/` config — it is what actually runs, not aspiration.
 
+> ### ⚠️ Read this first — the commands below are Accountr's, not this repo's (updated 2026-07-24)
+>
+> This document is authoritative for the **intent** of the gate stack: four layers, the branch
+> flow, the 70% coverage gate, required status checks, and the no-direct-push rule. All of that stands.
+>
+> Every **command** in it does not. Accountr is Nx + pnpm + Prisma + `apps/`/`libs/`; this repo is
+> **npm + Next.js (`frontend/`) and pip + Django (`backend/`)**, with no monorepo tooling
+> (`ARCHITECTURE-SPINE.md` AD-2). §1's `nx run-many` pre-push hook and §2's `apps/**`/`libs/**`/
+> `nx.json`/`pnpm-lock.yaml` triggers reference paths that will never exist here.
+>
+> **Translation table — use these, not the snippets below:**
+>
+> | Accountr | Here |
+> |---|---|
+> | `pnpm exec nx run-many -t type-check` | `cd frontend && npx tsc --noEmit` |
+> | `pnpm exec nx affected -t lint` | `cd frontend && npm run lint` |
+> | `pnpm exec nx affected -t test` | `cd frontend && npm test -- --coverage` **and** `cd backend && python manage.py test` |
+> | `pnpm exec nx affected -t build` | `cd frontend && npm run build` |
+> | `nx run backend:prisma-migrate` / `prisma migrate deploy` | `python manage.py migrate` |
+> | Trigger paths `apps/**`, `libs/**`, `nx.json`, `pnpm-lock.yaml` | `frontend/**`, `backend/**`, `package-lock.json`, `requirements.txt` |
+> | `fetch-depth: 0` (needed for `nx affected`) | Not needed — no affected graph |
+> | Test-job env: `DATABASE_URL`, `JWT_*_SECRET`, `EXCHANGE_RATE_*` | `POSTGRES_*`, Django `SECRET_KEY`, `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` |
+>
+> **Also superseded:**
+> - **§5 Changesets — not used here.** It requires pnpm and a `libs/` package graph, neither of which exists. Versioning is the `vX.Y.Z` tag on merge to `main`; nothing else.
+> - **§6 Deploy and §2's `push-to-ghcr` — deferred entirely** (AD-17). Phase 1 runs on localhost only; there is no `docker-compose.prod.yml` and `deploy.yml` still points at an Accountr server path. It stays non-functional rather than half-adapted, and the whole production envelope lands as its own work before anything is exposed beyond localhost.
+> - **§4's reviewer checklist** — drop the Accountr-specific items (Prisma DTOs, `HttpException` filters, `class-validator`). Money-as-string does not apply to this product either. Keep: tests map to acceptance criteria, ≥70% coverage, and **no bot-attribution footers**.
+>
+> Additional gate this repo needs (AD-3): CI regenerates the OpenAPI schema and the frontend API
+> types, and **fails on any diff** — that check is what keeps the Django and TypeScript contracts
+> from drifting.
+
 ## 0. Overview — the gate stack
 
 Code passes through four layers before it reaches production:

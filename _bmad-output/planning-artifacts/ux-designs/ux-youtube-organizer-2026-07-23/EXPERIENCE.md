@@ -2,12 +2,14 @@
 name: YouTube Organizer
 status: final
 created: 2026-07-23
-updated: 2026-07-23
+updated: 2026-07-24
 sources:
   - ../../prds/prd-youtube-organizer-2026-07-20/prd.md
   - ../../../../Docs/FRONTEND-STACK.md
   - ../../../../Docs/component-inventory-frontend.md
   - ../../../../Docs/architecture-frontend.md
+companions:
+  - ../../architecture/architecture-youtube-organizer-2026-07-24/ARCHITECTURE-SPINE.md
 ---
 
 # YouTube Organizer — Experience Spine
@@ -117,7 +119,7 @@ Behavioral. Visual specs live in `DESIGN.md.Components`.
 | **View toggle** | Any browse surface | Grid ⇄ list. **Persisted per surface**, not globally — Library drill-downs want grid, Uncategorized wants list, and one global preference would fight the user on every visit. |
 | **Confirmation dialog** | Every destructive action | shadcn `AlertDialog`. States count and consequence. Never suppressible, no "don't ask again." Focus lands on Cancel. |
 | **Inline banner** | Import, sync, quota, orphans, scope | shadcn `Alert`. Never modal, never blocking. Failure banners never auto-dismiss. Dismissible only when purely informational. |
-| **Sync status** | Settings, inline banners | Reports last successful sync, next scheduled run, and any pending-clear orphans. Read-only surface over a background process. |
+| **Sync status** | Settings, inline banners | Reports last successful sync and any pending-clear orphans, and carries the **Sync now** trigger. Read-only over the sync run's own record. *Phase 1 has no "next scheduled run" — sync is user-triggered (AD-9); that line returns with scheduled sync.* |
 
 ## Triage Modes
 
@@ -173,8 +175,8 @@ Inverts the question from *"what tags does this video need?"* to *"which of thes
 | Sync complete | Any | Toast: "87 videos imported." Nothing more. Suppressed if the user is mid-sweep. |
 | Sync partial failure | Uncategorized | Banner: "83 of 87 imported. 4 failed and stayed in `_Inbox`." Expandable detail. Never silent (FR-6). |
 | Pending-clear orphans | Uncategorized, Settings | Banner: "3 videos imported but not removed from `_Inbox`. Retrying next sync." Informational; no action demanded. |
-| Quota exhausted mid-sync | Global banner | "YouTube's daily limit reached. 41 of 100 imported. Resuming tomorrow." Committed videos stay committed. Because sync runs unattended, this must persist until acknowledged. |
-| Sync failed entirely | Settings, global banner | "Last sync failed at {time}. Next attempt {time}." Manual retry available. |
+| Quota exhausted mid-sync | Global banner | "YouTube's daily limit reached. 41 of 100 imported. Resuming tomorrow." Committed videos stay committed. **Persists until explicitly acknowledged** — a partial import he doesn't notice is a library he thinks is complete. |
+| Sync failed entirely | Settings, global banner | "Last sync failed at {time}." Manual retry available. *(The "Next attempt {time}." half returns with scheduled sync — AD-9.)* |
 | Read-only scope granted | Settings, Uncategorized | Persistent notice: inbox auto-clear and playlist deletion disabled; everything else works (FR-1). Offers re-consent. |
 | Unavailable video | Card, Watch | Card shows scrim + ⚠ badge, play disabled. On Watch: "This video is no longer available on YouTube." Actions: open in YouTube, or delete. Never a broken player (FR-19). |
 | `_Inbox` missing | Settings, global banner | "The playlist set as `_Inbox` no longer exists." Action: choose another (PRD Open Question 5). |
@@ -281,10 +283,12 @@ Journey names mirror PRD §2.3 verbatim.
 
 ### UJ-2 — Alexis clears his weekly inbox *(Phase 1 · the recurring core loop)*
 
-Sunday evening. Background sync has already pulled the week's `_Inbox` — 94 videos — without him asking.
+Sunday evening. He opens the app and pulls the week's `_Inbox` — 94 videos.
+
+> **Amended 2026-07-24 (`ARCHITECTURE-SPINE.md` AD-9).** This flow originally opened with *"Background sync has already pulled the week's `_Inbox` … without him asking."* **Phase 1 sync is user-triggered only** — Phase 1 runs on localhost (AD-17), so nothing is running to sync on a schedule. Sync is a **"Sync now"** action in Settings. Everything else below is unchanged: sync is non-blocking, the app stays fully usable while it runs, and every state pattern below still applies. Scheduled sync returns with the production envelope.
 
 1. He opens the app on his phone. Library shows its shelf rows. The Uncategorized tab carries **no badge**; he goes there because it's Sunday.
-2. Uncategorized shows a banner: "94 videos imported. 3 not removed from `_Inbox` — retrying next sync." Nothing blocks.
+2. He taps **Sync now**. A non-blocking banner reads "Checking `_Inbox`…" and he keeps browsing while it runs. It settles into: "94 videos imported. 3 not removed from `_Inbox` — retrying next sync." Nothing blocks.
 3. He switches to **Focus mode** and picks two tags: **"Filing as: `guitar` + `course`."**
 4. He sweeps, tapping the eleven guitar-course videos. **Apply** — one action files all eleven with both tags. They leave Uncategorized.
 5. He resets to `barca` alone, sweeps eight. Then `podcast` + `history`, fourteen. Then `cooking`, six.
