@@ -1,0 +1,182 @@
+# generated: 2026-07-24T20:26:51-0400
+# last_updated: 2026-07-24T20:26:51-0400
+# project: youtube-organizer
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-07-24T20:26:51-0400
+last_updated: 2026-07-24T20:26:51-0400
+project: youtube-organizer
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: Backend platform
+  epic-1: backlog
+  1-1-upgrade-to-django-6-0-with-bounded-dependency-pins: backlog
+  1-2-layered-backend-package-skeleton-and-test-runner: backlog
+  1-3-first-party-pyjwt-token-issue-verify-module: backlog
+  1-4-cookie-authentication-class-and-middleware-retirement: backlog
+  1-5-make-backup-target-named-volume-and-verified-restore: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Frontend platform
+  epic-2: backlog
+  2-1-re-verify-and-amend-the-frontend-pin-block: backlog
+  2-2-delete-the-legacy-prototype-and-scaffold-the-app-router-shell: backlog
+  2-3-design-token-system-tailwind-v3-and-shadcn-ui: backlog
+  2-4-react-query-provider-credentialed-axios-client-and-query-key-factory: backlog
+  2-5-jest-rtl-axios-mock-adapter-test-harness: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: API contract pipeline + CI
+  epic-3: backlog
+  3-1-openapi-schema-generation-with-drf-spectacular: backlog
+  3-2-single-custom-drf-exception-handler-one-error-envelope: backlog
+  3-3-generated-typescript-client-via-hey-api-openapi-ts: backlog
+  3-4-ci-schema-type-drift-gate: backlog
+  3-5-rewrite-github-actions-ci-onto-this-repos-commands: backlog
+  3-6-rewrite-pre-push-pre-commit-hooks-keep-deploy-yml-non-functional: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Library data model
+  epic-4: backlog
+  4-1-video-model-with-soft-delete-and-the-three-dates: backlog
+  4-2-tag-model-with-normalised-identity-and-case-insensitive-uniqueness: backlog
+  4-3-videotombstone-and-the-three-way-dedupe-helper: backlog
+  4-4-playlist-skeleton-phase-2-headroom: backlog
+  4-5-full-text-search-vector-gin-index-and-service-side-refresh: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: YouTube gateway + fake
+  epic-5: backlog
+  5-1-gateway-port-and-injectable-fake: backlog
+  5-2-playlist-and-playlist-item-reads: backlog
+  5-3-batched-metadata-fetch-with-duration-and-thumbnail-resolution: backlog
+  5-4-item-removal-and-quota-error-translation: backlog
+  5-5-availability-detection: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Auth, write scope & _Inbox designation
+  epic-6: backlog
+  6-1-oauth-consent-with-youtube-write-scope: backlog
+  6-2-persist-granted-scope-and-enable-read-only-degraded-mode: backlog
+  6-3-designate-change-and-persist-the-inbox: backlog
+  6-4-create-an-inbox-when-none-is-suitable: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Sync engine
+  epic-7: backlog
+  7-1-syncrun-lifecycle-record: backlog
+  7-2-sync-inbox-command-scaffold-idempotent-user-triggerable: backlog
+  7-3-three-way-dedupe-on-import: backlog
+  7-4-transactional-import-persist-verify-enqueue-clear: backlog
+  7-5-outbox-drain-and-orphan-retry: backlog
+  7-6-reactive-quota-handling-with-per-run-cap: backlog
+  7-7-structured-per-decision-sync-log: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Browse + search API
+  epic-8: backlog
+  8-1-get-api-videos-base-with-pagination-and-strict-params: backlog
+  8-2-tag-channel-and-watched-facets: backlog
+  8-3-length-range-and-channel-as-filter-fr-12: backlog
+  8-4-derived-uncategorized: backlog
+  8-5-full-text-search-param: backlog
+  8-6-library-hub-dimension-counts: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Mutation API
+  epic-9: backlog
+  9-1-tag-crud: backlog
+  9-2-delta-tag-application-on-a-single-video: backlog
+  9-3-bulk-tag-application: backlog
+  9-4-soft-delete-single-and-bulk: backlog
+  9-5-restore-purge-and-retention: backlog
+  9-6-bulk-freshness-endpoint-schema-only: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: Library hub + browse surfaces
+  epic-10: backlog
+  10-1-video-card-thumbnail-status-layer-and-view-toggle: backlog
+  10-2-library-hub-shelf-rows: backlog
+  10-3-app-shell-sidebar-responsive-layout-mobile-tab-bar: backlog
+  10-4-tag-detail-with-the-tags-only-filter-chip-row: backlog
+  10-5-filters-panel: backlog
+  10-6-search-ui: backlog
+  10-7-tags-index-management-ui: backlog
+  10-8-browse-state-patterns-and-accessibility-floor: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11: Triage surfaces
+  epic-11: backlog
+  11-1-uncategorized-list-mode-with-selection: backlog
+  11-2-bulk-action-bar: backlog
+  11-3-optimistic-bulk-tag-with-per-row-revert: backlog
+  11-4-focus-mode-tag-first-bucketing: backlog
+  11-5-discard-flow-with-count-confirmation: backlog
+  11-6-keyboard-shortcuts-wcag-2-1-4-trio-and-touch-model: backlog
+  11-7-incremental-triage-and-the-win-state: backlog
+  epic-11-retrospective: optional
+
+  # Epic 12: Watch + playback
+  epic-12: backlog
+  12-1-watch-page-layout-single-column-no-rail: backlog
+  12-2-embedded-iframe-player-with-open-in-youtube: backlog
+  12-3-contiguous-coverage-auto-watched: backlog
+  12-4-inline-tag-editing-on-the-watch-page: backlog
+  12-5-unavailable-video-state-at-play-time: backlog
+  epic-12-retrospective: optional
+
+  # Epic 13: Settings + sync status
+  epic-13: backlog
+  13-1-settings-shell-google-connection-and-read-only-notice: backlog
+  13-2-inbox-designation-ui: backlog
+  13-3-sync-now-trigger-and-sync-status: backlog
+  13-4-sync-banners-partial-failure-orphans-quota-failure: backlog
+  13-5-theme-and-watched-threshold: backlog
+  13-6-platform-limitation-statements-and-voice-pass: backlog
+  epic-13-retrospective: optional
+
+  # Epic 14: Trash
+  epic-14: backlog
+  14-1-trash-surface-with-restore: backlog
+  14-2-retention-purge-to-tombstone: backlog
+  epic-14-retrospective: optional
