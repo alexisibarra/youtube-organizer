@@ -46,6 +46,11 @@ class GoogleAuthInitView(APIView):
             prompt='consent',
         )
         request.session['oauth_state'] = state
+        # google-auth-oauthlib >= 1.x defaults to autogenerate_code_verifier=True, so
+        # authorization_url() above sent Google a PKCE code_challenge. The verifier lives only
+        # on this Flow instance, which dies with the request — persist it so the callback (a
+        # separate request building a separate Flow) can complete the token exchange.
+        request.session['oauth_code_verifier'] = flow.code_verifier
         return Response({'auth_url': auth_url})
 
 
@@ -76,6 +81,10 @@ class GoogleAuthCallbackView(APIView):
             state=state,
             redirect_uri=GOOGLE_REDIRECT_URI
         )
+        # Restore the PKCE verifier stashed by GoogleAuthInitView. Without it Google rejects the
+        # exchange with 'invalid_grant: Missing code verifier', because the authorization request
+        # carried a code_challenge.
+        flow.code_verifier = request.session.get('oauth_code_verifier')
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
 
