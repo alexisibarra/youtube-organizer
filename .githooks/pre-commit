@@ -1,0 +1,25 @@
+#!/bin/sh
+# Block direct commits to protected branches.
+#
+# All work goes through a feat/story-* or docs/* branch and a PR
+# (see CLAUDE.md and _bmad-output/project-context.md). This hook is the
+# local guardrail for that rule; branch protection on the remote is the
+# authoritative gate.
+#
+# Activate once per clone:  git config core.hooksPath .githooks
+#
+# The four-layer pre-push gate (tsc / lint / test / build / manage.py test)
+# is intentionally NOT here yet — it is owned by Epic 3 Story 3.6 and needs
+# the E1/E2 stack to exist before its commands have real targets.
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+
+for protected in main develop; do
+	if [ "$branch" = "$protected" ]; then
+		echo "✗ Direct commits to '$protected' are blocked."
+		echo "  Create a branch (feat/story-* or docs/*) and open a PR."
+		exit 1
+	fi
+done
+
+exit 0
