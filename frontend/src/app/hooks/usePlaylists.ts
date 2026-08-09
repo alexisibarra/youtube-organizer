@@ -15,6 +15,23 @@ export type Playlist = {
   title: string;
 };
 
+// Shape of the YouTube API playlist resource, narrowed to the fields we read.
+// Optional members mirror the API's inconsistency — thumbnails and contentDetails
+// are not guaranteed to be present on every item.
+type YouTubePlaylistItem = {
+  contentDetails?: { itemCount?: number };
+  id: string;
+  snippet: {
+    channelTitle: string;
+    description: string;
+    publishedAt: string;
+    thumbnails?: Partial<
+      Record<"maxres" | "high" | "medium" | "default", { url: string }>
+    >;
+    title: string;
+  };
+};
+
 export function usePlaylists() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +47,8 @@ export function usePlaylists() {
         if (!res.ok) throw new Error("Failed to fetch playlists");
         const data = await res.json();
         // Teaching: Map YouTube API response to normalized Playlist objects
-        const playlists: Playlist[] = (data.items || []).map((item: any) => ({
+        const items: YouTubePlaylistItem[] = data.items || [];
+        const playlists: Playlist[] = items.map((item) => ({
           id: item.id,
           title: item.snippet.title,
           description: item.snippet.description,

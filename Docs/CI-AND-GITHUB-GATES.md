@@ -2,7 +2,7 @@
 
 > How we gate code in this project: local git hooks, GitHub Actions CI, the PR template, changesets, and deployment. Mirror this setup on the other project. Everything below is read from the live `.github/`, `.githooks/`, and `.changeset/` config — it is what actually runs, not aspiration.
 
-> ### ⚠️ Read this first — the commands below are Accountr's, not this repo's (updated 2026-07-24)
+> ### ⚠️ Read this first — §1 and §2 are now implemented; their snippets below are Accountr's (updated 2026-08-09)
 >
 > This document is authoritative for the **intent** of the gate stack: four layers, the branch
 > flow, the 70% coverage gate, required status checks, and the no-direct-push rule. All of that stands.
@@ -12,18 +12,34 @@
 > (`ARCHITECTURE-SPINE.md` AD-2). §1's `nx run-many` pre-push hook and §2's `apps/**`/`libs/**`/
 > `nx.json`/`pnpm-lock.yaml` triggers reference paths that will never exist here.
 >
-> **Translation table — use these, not the snippets below:**
+> **`.github/workflows/ci.yml` and `.githooks/pre-push` are live and adapted** — they run the
+> right-hand column of the table below, not the snippets in §1–§2. Read the files themselves as the
+> record of what executes; the sections here explain *why* each layer exists. The gates omitted from
+> `ci.yml` are named there with their owning story, and are listed under "Still deferred" below.
+>
+> **Translation table — the implemented commands:**
 >
 > | Accountr | Here |
 > |---|---|
 > | `pnpm exec nx run-many -t type-check` | `cd frontend && npx tsc --noEmit` |
 > | `pnpm exec nx affected -t lint` | `cd frontend && npm run lint` |
-> | `pnpm exec nx affected -t test` | `cd frontend && npm test -- --coverage` **and** `cd backend && python manage.py test` |
+> | `pnpm exec nx affected -t test` | `cd backend && python manage.py test` — frontend has **no** `test` script yet (story 2-5) |
 > | `pnpm exec nx affected -t build` | `cd frontend && npm run build` |
-> | `nx run backend:prisma-migrate` / `prisma migrate deploy` | `python manage.py migrate` |
-> | Trigger paths `apps/**`, `libs/**`, `nx.json`, `pnpm-lock.yaml` | `frontend/**`, `backend/**`, `package-lock.json`, `requirements.txt` |
+> | `nx run backend:prisma-migrate` / `prisma migrate deploy` | `python manage.py makemigrations --check --dry-run` then `python manage.py migrate` |
+> | Trigger paths `apps/**`, `libs/**`, `nx.json`, `pnpm-lock.yaml` | **No paths filter.** GitHub reports nothing for a filtered-out job, so with these four as *required* checks (§7) a docs-only PR would be permanently unmergeable. Four short jobs on every PR beats an unmergeable PR. |
+> | Node 22 hardcoded in the workflow | `node-version-file: frontend/.nvmrc` — one source of truth shared by CI, nvm and the pre-push hook |
 > | `fetch-depth: 0` (needed for `nx affected`) | Not needed — no affected graph |
-> | Test-job env: `DATABASE_URL`, `JWT_*_SECRET`, `EXCHANGE_RATE_*` | `POSTGRES_*`, Django `SECRET_KEY`, `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` |
+> | Test-job env: `DATABASE_URL`, `JWT_*_SECRET`, `EXCHANGE_RATE_*` | `POSTGRES_DB/USER/PASSWORD/HOST/PORT` only. **`POSTGRES_HOST` must be `localhost`** — `settings.py` defaults it to `db`, the compose service name. Django `SECRET_KEY` and the `GOOGLE_*` vars are **not** set: `settings.py` hardcodes the key and `google_auth_views.py` falls back to placeholder literals. Any backend test touching OAuth must set them itself. |
+>
+> **Still deferred — omitted from `ci.yml` on purpose, not forgotten:**
+> - **Frontend test job + the 70% coverage gate** — story 2-5 lands the Jest/RTL/`axios-mock-adapter`
+>   harness. Until then there is nothing to run, and Epic 2 deletes the legacy code it would cover.
+> - **Backend coverage** — the suite arrives with story 1-2's test runner; `manage.py test` runs today
+>   against an empty suite so the job is real and green.
+> - **The AD-3 schema/type drift gate** — story 3-4, once 3-1 and 3-3 provide the codegen.
+>
+> None of these are stubbed as `continue-on-error`: a permanently-yellow check trains people to
+> ignore CI. Each is a TODO comment in `ci.yml` naming its story.
 >
 > **Also superseded:**
 > - **§5 Changesets — not used here.** It requires pnpm and a `libs/` package graph, neither of which exists. Versioning is the `vX.Y.Z` tag on merge to `main`; nothing else.

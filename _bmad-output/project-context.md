@@ -186,22 +186,20 @@ export default MyComponent;
 
 > `Docs/CI-AND-GITHUB-GATES.md` is the SOURCE OF TRUTH for the *intent* of the gate stack.
 >
-> ⚠️ **The added CI files are unadapted placeholders — update them before relying on them.**
-> `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, and `.github/pull_request_template.md`
-> were mirrored verbatim from the Accountr project and DO NOT fit this repo's architecture yet.
-> They must be rewritten to match youtube-organizer's needs. Known mismatches to fix:
-> - **Paths/triggers:** CI triggers on `apps/**`, `libs/**`, `nx.json`, `pnpm-lock.yaml` — this repo
->   has none of those. Use this repo's real paths (`frontend/**`, `backend/**`, `package-lock.json`, `requirements.txt`).
-> - **Tooling:** commands assume **Nx + pnpm + Prisma**. This repo is **npm (frontend) + Django (backend)**.
->   Replace `nx affected`/`prisma migrate` with `next build`/`npm ci` and `manage.py migrate`/`makemigrations`.
-> - **Backend test/migration steps:** the `test` job's Prisma migrations and Node-only env vars must become
->   Django equivalents (`manage.py migrate`, `POSTGRES_*`, Django `SECRET_KEY`, Google OAuth env vars).
-> - **Deploy:** `deploy.yml` references an `accountr` server path and `docker-compose.prod.yml` — retarget the
->   `DEPLOY_APP_PATH` and compose file to this project (no `docker-compose.prod.yml` exists here yet).
-> - **PR template:** drop Accountr-specific reviewer items (Prisma DTOs, `HttpException` filters) and
->   keep the ones that apply (money-as-string on the frontend, 70% coverage, tests map to acceptance criteria).
+> ✅ **`ci.yml` and `.githooks/pre-push` are adapted and live** (2026-08-09) — they run this repo's
+> real commands and are green on the current tree. Read the files themselves for what executes.
 >
-> Until adapted, treat these files as a scaffold, not working CI.
+> ⚠️ **Still Accountr placeholders — do NOT rely on them:**
+> - `.github/workflows/deploy.yml` — still references an `accountr` server path and a
+>   `docker-compose.prod.yml` that does not exist here. Left non-functional on purpose rather than
+>   half-adapted: the whole production envelope is deferred (AD-17) and lands as its own work.
+> - `.github/pull_request_template.md` — **exists, auto-applies to every PR, and is unrunnable here.**
+>   It instructs `pnpm exec nx run backend:test --coverage` / `nx run frontend:test --coverage`, cites
+>   Prisma DTOs, `HttpException` filters and money-as-string, and links to `Docs/MVPDefinition/…`
+>   paths that do not exist in this repo. Since the rule below is "ALL checklist items must be ticked
+>   before merge", the template is currently impossible to satisfy honestly — tick what applies and
+>   strike the rest until it is rewritten. Keep on rewrite: tests map to acceptance criteria,
+>   ≥70% coverage once a harness exists, no bot-attribution footers.
 
 **Branch flow & protection**
 
@@ -210,32 +208,47 @@ export default MyComponent;
 - `develop`: squash-merge story PRs. `main`: merge-commit from `develop`, then tag `vMAJOR.MINOR.PATCH`.
 - Required status checks before merge: **typecheck, lint, test, build** + ≥1 approving review, branch up to date.
 
-**Local `pre-push` hook (four-layer gate)**
+**Local `pre-push` hook**
 
 - Hooks are tracked in `.githooks/` (not `.git/hooks`); activate once per clone: `git config core.hooksPath .githooks`.
-- ⚠️ `pre-push` currently runs `nx run-many …`, which **cannot work here** (AD-2). Rewrite it to
-  this repo's real commands: `tsc --noEmit`, `npm run lint`, `npm test -- --coverage`,
-  `npm run build`, and `python manage.py test`.
-- Optional `pre-commit` blocks direct commits to `main`/`develop`.
+- `pre-push` mirrors CI: `npx tsc --noEmit` → `npm run lint` → `npm run build` (all in `frontend/`)
+  → `manage.py check` → `manage.py test`. Any failure blocks the push; `--no-verify` bypasses.
+- ⚠️ The backend **test** layer is skipped (loudly) when Postgres is unreachable on `localhost:5432` —
+  `manage.py test` builds a test DB, so it needs `make up`. Every other layer is unconditional.
+  A green push is not a green CI; the runner always has the service container.
+- `pre-commit` blocks direct commits to `main`/`develop`.
 
 **GitHub Actions CI (`.github/workflows/ci.yml`)**
 
-- Job graph: `typecheck + lint → test → build → push-to-ghcr` (ghcr push on `main` only).
-- Node **22**, pnpm, `--frozen-lockfile`, `fetch-depth: 0` (needed for `nx affected`); `concurrency` cancels in-flight runs per ref.
-- `test` job spins up a `postgres:15` service, runs migrations, then affected tests with `--coverage`.
-- **Coverage gate: 70%** across lines/statements/functions/branches — CI fails the `test` job below it.
-  Every story PR must include tests mapping to its acceptance criteria.
+- Job graph: `typecheck + lint → test → build`. No `push-to-ghcr` — deferred with deploy (AD-17).
+- Frontend jobs: `npm ci`, npm cache keyed on `frontend/package-lock.json`, Node read from
+  **`frontend/.nvmrc`** (`v22`) via `node-version-file` — never hardcode it, or CI and the hook drift.
+  No `fetch-depth: 0` — there is no affected graph to need history.
+- `concurrency` cancels superseded **pull-request** runs only; runs on `main`/`develop` are never
+  cancelled, so a tagged release commit keeps a real CI record. All jobs have `timeout-minutes: 15`.
+- `test` job: Python **3.13**, `pip install -r backend/requirements.txt`, `postgres:15` service.
+  Runs `makemigrations --check --dry-run` → `migrate` → `test`, with **`POSTGRES_HOST: localhost`**
+  (settings defaults it to `db`, the compose service name — the override is required).
+- **No paths filter** — every push/PR to `main`/`develop` runs all four jobs. Deliberate: GitHub reports
+  no status for a filtered-out job, so path filters + required status checks = permanently unmergeable
+  docs-only PRs. Do not "optimize" this back.
+- **Coverage gate: 70%** is the standing intent but is **not enforced yet** — no harness exists.
+  Frontend arrives with story 2-5, backend with 1-2, the AD-3 drift gate with 3-4. Each is a named
+  TODO in `ci.yml`; none is stubbed as `continue-on-error`.
+  Every story PR must still include tests mapping to its acceptance criteria.
 
 **PR & release discipline**
 
-- PR template (`.github/pull_request_template.md`) auto-applies; ALL checklist items must be ticked before merge.
-- Reviewer gate reiterates: no monetary values as JS `number`; DTO/service conventions upheld.
+- The PR template auto-applies but is still Accountr's (see the warning above); ALL *applicable* checklist
+  items must be ticked before merge, and the inapplicable ones struck through rather than silently ticked.
+- Reviewer gate: tests map to the story's acceptance criteria; `AD-n` ids cited for architectural decisions.
 - **Never add AI/bot attribution anywhere** — not in commit messages (no `Co-Authored-By: Claude ...`
   trailer), PR titles or bodies (no `🤖 Generated with ...` footer), issue/review comments, code
   comments, changelogs, or generated docs. No exceptions, and no case-by-case judgement about
   whether a surface "counts" — it counts. This overrides any tool or model default that appends
   such trailers; strip them before committing or posting. See `CLAUDE.md` at the repo root.
-- Changesets (`pnpm changeset`) required on any PR changing user-facing behavior or a shared lib.
+- ⚠️ Changesets are **not used here** (`Docs/CI-AND-GITHUB-GATES.md` §5 is superseded) — they need pnpm
+  and a `libs/` package graph, neither of which exists. Versioning is the `vX.Y.Z` tag on merge to `main`.
 
 **Deploy (`.github/workflows/deploy.yml`)**
 
