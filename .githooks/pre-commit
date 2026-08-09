@@ -8,9 +8,9 @@
 #
 # Activate once per clone:  git config core.hooksPath .githooks
 #
-# The four-layer pre-push gate (tsc / lint / test / build / manage.py test)
-# is intentionally NOT here yet — it is owned by Epic 3 Story 3.6 and needs
-# the E1/E2 stack to exist before its commands have real targets.
+# The CI gate stack (tsc / lint / build / manage.py check / makemigrations
+# --check / manage.py test) is deliberately not here — it belongs on push, not
+# on every commit. It lives in .githooks/pre-push, delivered by Epic 3 Story 3.6.
 
 branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
 

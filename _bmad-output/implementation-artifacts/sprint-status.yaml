@@ -1,5 +1,5 @@
 # generated: 2026-07-24T20:26:51-0400
-# last_updated: 2026-08-09T16:08:35-0400
+# last_updated: 2026-08-09T17:30:00-0400
 # project: youtube-organizer
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-24T20:26:51-0400
-last_updated: 2026-08-09T17:05:00-0400
+last_updated: 2026-08-09T17:30:00-0400
 project: youtube-organizer
 project_key: NOKEY
 tracking_system: file-system
@@ -74,8 +74,8 @@ development_status:
   3-4-ci-schema-type-drift-gate: backlog
   # 3-5 and 3-6 pulled forward ahead of their E1/E2 dependencies and shipped
   # together in one PR (spec-ci-gate-stack.md) — they share one command set.
-  3-5-rewrite-github-actions-ci-onto-this-repos-commands: review
-  3-6-rewrite-pre-push-pre-commit-hooks-keep-deploy-yml-non-functional: review
+  3-5-rewrite-github-actions-ci-onto-this-repos-commands: done
+  3-6-rewrite-pre-push-pre-commit-hooks-keep-deploy-yml-non-functional: done
   epic-3-retrospective: optional
 
   # Epic 4: Library data model

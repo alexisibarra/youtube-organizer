@@ -5,12 +5,13 @@ name: CI
 # alternative package manager, no affected graph — and so no fetch-depth: 0. See
 # Docs/CI-AND-GITHUB-GATES.md for the intent behind each layer.
 #
-# Deliberately NOT here yet, each waiting on the story that creates its tooling:
-#   - frontend test job + 70% coverage gate  -> story 2-5 (Jest/RTL/axios-mock-adapter harness)
-#   - OpenAPI schema/type drift gate          -> story 3-4 (needs 3-1 + 3-3 codegen)
-#   - push-to-ghcr / deploy                   -> deferred whole (AD-17); deploy.yml is
-#                                                intentionally left non-functional
+# Deliberately NOT here yet, each waiting on the story that creates its tooling.
 # Add them when their tooling lands — do not stub them as continue-on-error.
+#   TODO(story 2-5): frontend test job + 70% coverage gate (Jest/RTL/axios-mock-adapter harness)
+#   TODO(story 1-2): backend coverage gate, once the layered package skeleton lands a test runner
+#   TODO(story 3-4): OpenAPI schema/type drift gate (needs 3-1 + 3-3 codegen)
+#   TODO(AD-17): push-to-ghcr / deploy — deferred whole; deploy.yml is intentionally
+#                left non-functional until the production envelope lands as its own work
 
 # No paths filter, deliberately. GitHub does not synthesize a passing result for a
 # job that was filtered out, so with these four as required status checks a
@@ -42,7 +43,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Single source of truth, shared with nvm and the pre-push hook.
+          # Single source of truth: an exact pin, read by nvm and enforced by
+          # .githooks/pre-push, which blocks a push made on a different Node.
           node-version-file: frontend/.nvmrc
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
@@ -64,7 +66,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Single source of truth, shared with nvm and the pre-push hook.
+          # Single source of truth: an exact pin, read by nvm and enforced by
+          # .githooks/pre-push, which blocks a push made on a different Node.
           node-version-file: frontend/.nvmrc
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
@@ -145,7 +148,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Single source of truth, shared with nvm and the pre-push hook.
+          # Single source of truth: an exact pin, read by nvm and enforced by
+          # .githooks/pre-push, which blocks a push made on a different Node.
           node-version-file: frontend/.nvmrc
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json

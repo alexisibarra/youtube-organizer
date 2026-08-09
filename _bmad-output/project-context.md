@@ -211,10 +211,20 @@ export default MyComponent;
 **Local `pre-push` hook**
 
 - Hooks are tracked in `.githooks/` (not `.git/hooks`); activate once per clone: `git config core.hooksPath .githooks`.
-- `pre-push` mirrors CI: `npx tsc --noEmit` → `npm run lint` → `npm run build` (all in `frontend/`)
-  → `manage.py check` → `manage.py test`. Any failure blocks the push; `--no-verify` bypasses.
-- ⚠️ The backend **test** layer is skipped (loudly) when Postgres is unreachable on `localhost:5432` —
-  `manage.py test` builds a test DB, so it needs `make up`. Every other layer is unconditional.
+- `pre-push` mirrors CI in six layers: `npx tsc --noEmit` → `npm run lint` → `npm run build` (all in
+  `frontend/`) → `manage.py check` → `manage.py makemigrations --check --dry-run` → `manage.py test`.
+  Any failure blocks the push; `--no-verify` bypasses. It does **not** run `manage.py migrate` — that
+  would mutate the developer's dev database as a side effect of pushing.
+- **Preconditions that block the push** (frontend layers are not skippable): `npm` on PATH, `node -v`
+  matching `frontend/.nvmrc` exactly, and a host `frontend/node_modules`. `make up` keeps node_modules
+  in a Docker volume, so a container-only developer still installs once on the host.
+- ⚠️ **Two skip paths, both exit 0 loudly:** (1) if the backend toolchain is not importable
+  (`import django, psycopg2` fails under `backend/.venv/bin/python`, else system `python3`), **all
+  three backend layers are skipped** — the documented backend workflow is Docker-based, so a fresh
+  clone has no venv; (2) if the Django connection probe fails, only `manage.py test` is skipped —
+  it builds a test DB, so it needs `make up`. The probe opens a real Django connection using the
+  settings-resolved host (not a bare TCP connect to 5432, which any stray listener would satisfy),
+  and both probes print their stderr so a broken environment is distinguishable from an absent one.
   A green push is not a green CI; the runner always has the service container.
 - `pre-commit` blocks direct commits to `main`/`develop`.
 
@@ -222,7 +232,10 @@ export default MyComponent;
 
 - Job graph: `typecheck + lint → test → build`. No `push-to-ghcr` — deferred with deploy (AD-17).
 - Frontend jobs: `npm ci`, npm cache keyed on `frontend/package-lock.json`, Node read from
-  **`frontend/.nvmrc`** (`v22`) via `node-version-file` — never hardcode it, or CI and the hook drift.
+  **`frontend/.nvmrc`** via `node-version-file` — an exact `vX.Y.Z` pin (currently `v22.23.2`), never
+  hardcoded in the workflow. The pre-push hook reads the same file and blocks a push made on a
+  different Node, so the two cannot drift; bumping the pin means every developer runs `nvm install`.
+  `frontend/Dockerfile` and `frontend/package.json` `engines` track the same major.
   No `fetch-depth: 0` — there is no affected graph to need history.
 - `concurrency` cancels superseded **pull-request** runs only; runs on `main`/`develop` are never
   cancelled, so a tagged release commit keeps a real CI record. All jobs have `timeout-minutes: 15`.
