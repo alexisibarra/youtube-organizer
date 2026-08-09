@@ -392,7 +392,7 @@ from `Docs/FRONTEND-STACK.md`, which is authoritative on the frontend stack.
 | --- | --- |
 | Python | 3.13 |
 | Package managers | `npm` (frontend), `pip` + `requirements.txt` (backend). **Not** pnpm — see AD-2 |
-| Django | 6.0.7 (upgrade from 5.2) |
+| Django | 6.0.x (upgrade from 5.2) — **shipped at `6.0.8`** in Story 1.1 (2026-08-09). 6.0.8 (2026-08-04) carries one high, two moderate and one low severity security fix over the 6.0.7 named when this spine was written; taking it is a security-motivated move *inside* the `6.0.x` decision, not a divergence from it |
 | Django REST Framework | `>=3.17.0` — Django 6.0 support landed in 3.17.0 (March 2026) |
 | PyJWT | `2.13.0` — replaces djangorestframework-simplejwt (AD-14); framework-agnostic, so no Django coupling |
 | drf-spectacular | 0.30.0 |

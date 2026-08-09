@@ -4,7 +4,7 @@ baseline_commit: b592f2b42fab61049076923c0d0b30a0f604a1ac
 
 # Story 1.1: Upgrade to Django 6.0 with bounded dependency pins
 
-Status: review
+Status: done
 
 Epic: 1 — Backend platform · Story key: `1-1-upgrade-to-django-6-0-with-bounded-dependency-pins`
 Branch: `feat/story-1-1-django-6-bounded-pins` → PR → `develop` (squash). Never commit to `main`/`develop`.
@@ -60,7 +60,7 @@ confirming no regression from the framework bump.
 - [x] **Task 3 — Verify SimpleJWT survives the bump (AC2, Risk R1)**
   - [x] Run the `RefreshToken.for_user` shell probe in Dev Notes. → returned a token; R1 did **not** materialise.
   - [x] If it raises: **STOP, do not patch or vendor SimpleJWT.** Record the traceback in Debug Log References and escalate — the fix is pulling Stories 1.3/1.4 forward, not repairing a dead dependency. → n/a, did not raise.
-- [~] **Task 4 — Regression-probe the existing routes (AC2)**
+- [x] **Task 4 — Regression-probe the existing routes (AC2)**
   - [x] The three `curl` probes in the DoD.
   - [x] Manual browser login through Google if credentials are present in `backend/.env`; verify the `access_token` HttpOnly cookie is set and `/api/auth/me/` then returns the user. → Done by Alexis against the backend directly; `/api/auth/me/` returns the user. The frontend entry point has a separate pre-existing defect (see Completion Notes).
   - [x] Confirm no schema drift: `manage.py makemigrations --check --dry-run`. → exit 0.
@@ -70,6 +70,35 @@ confirming no regression from the framework bump.
   - [x] Conventional Commit, e.g. `chore(backend): pin dependencies and upgrade to Django 6.0`.
   - [x] Cite `AD-14` (stack) and `AD-17` in the PR body.
   - [x] **No AI/bot attribution anywhere** — no `Co-Authored-By`, no "Generated with" footer, in commit or PR.
+
+### Review Findings
+
+_Code review 2026-08-09 — three adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor).
+5 decision-needed findings were resolved by Alexis on 2026-08-09 (accepted status quo on all five);
+10 further findings were dismissed as noise/false positives._
+
+**Decisions taken (2026-08-09, Alexis):**
+
+- **Out-of-scope commit `ec1c62d` — accepted, stays on the branch.** Consequence: the File List and Completion Notes are amended to describe the branch honestly (see the Patch item below).
+- **Transitive closure stays unpinned — accepted.** Deferred rather than dismissed; see the Defer item below.
+- **Backend-direct OAuth run satisfies AC2 — accepted.** The DoD "in the browser" item stands as checked, with the qualifier already recorded in Completion Notes. Dismissed.
+- **No YouTube Data API probe now — accepted.** Deferred rather than dismissed; see the Defer item below.
+- **Prose DoD evidence is the accepted standard — accepted.** No transcript artifacts required. Dismissed.
+
+- [x] [Review][Patch] Story record does not describe the branch it ships on — commit `ec1c62d` ("Add tests for canon sync, token counting, and report rendering") adds 391 files / ~51k insertions under `.claude/`, plus `CLAUDE.md` and `.gitignore`, with a non-Conventional Commit message. Accepted to stay, so the File List ("exactly three files") and Completion Notes ("exactly one production file … `git diff --stat` is empty") must be amended — as written they describe a branch state that no longer exists, and the story's central verification claim is stated as a *method* whose result has changed. [_bmad-output/implementation-artifacts/1-1-upgrade-to-django-6-0-with-bounded-dependency-pins.md:376-386]
+- [x] [Review][Patch] Frontend login defect diagnosed but filed nowhere durable — the story concludes "the app is effectively unloggable-into through its own UI" and "Worth filing as its own bug", then files nothing: no GitHub issue, no `action_items` entry in `sprint-status.yaml`, no Epic 2 story amended. The only record of a P1 defect is line ~363 of a 393-line dependency-pin story doc. [frontend/src/components/YoutubeHeader.tsx:21]
+- [x] [Review][Patch] Story document carries three factual/consistency errors — (a) Task 4 is marked `[~]` while all three of its subtasks are `[x]` and the story is `Status: review`; `~` is not in the document's checkbox vocabulary and nothing explains it. (b) The R3 completion note says "Verified at library level; **not** a substitute for the end-to-end login (see the outstanding item below)" — the pointer dangles and the sentence contradicts the e2e verification recorded immediately after it; stale text from an earlier revision. (c) "rewritten from 13 unbounded requirements to **15** exact `==` pins plus `drf-spectacular`" — the file has **14** pinned lines in total, `drf-spectacular` included. [_bmad-output/implementation-artifacts/1-1-upgrade-to-django-6-0-with-bounded-dependency-pins.md:63,324,316]
+- [x] [Review][Patch] `last_updated` datatype degraded from ISO-8601 timestamp to bare date — `2026-07-24T20:26:51-0400` → `2026-08-09`, in both the comment header and the YAML body, while `generated:` one line above keeps the full format. Consumers parsing these as datetimes now face two incompatible shapes and ordering against `generated` is ambiguous. [_bmad-output/implementation-artifacts/sprint-status.yaml:44,45]
+- [x] [Review][Patch] Architecture spine still names Django `6.0.7`; the repo now pins `6.0.8` — the bump is well-justified (security fixes, inside the spine's `6.0.x` decision), but no spine annotation or change-log entry was written. `project-context.md:15` declares the spine binding, so the next story reads a number the repo has already diverged from. [ARCHITECTURE-SPINE.md#Stack]
+
+- [x] [Review][Defer] Transitive dependency closure is unpinned, so "reproducible" is not fully achieved — deferred, accepted by Alexis 2026-08-09. Reason: *a lockfile is new-file scope this story forbids; revisit at Story 1.3, when PyJWT becomes a first-party direct pin.* AC1 pins 14 direct requirements, but `PyJWT`, `cryptography`, `oauthlib`, `requests-oauthlib`, `httplib2`, `asgiref`, `sqlparse`, `jsonschema` and `uritemplate` float. Two concrete consequences to carry forward: (a) the `Flow.code_verifier` contract R3 was written to protect actually lives in `oauthlib`/`requests-oauthlib`, neither pinned — a later release can regress commit `8b8d48e` with `requirements.txt` unchanged; (b) "PyJWT 2.13.0 … no pin conflict ahead" rests on an unpinned transitive that loses its only requirer once Story 1.4 removes SimpleJWT. [backend/requirements.txt]
+- [x] [Review][Defer] The four `google-*` bumps have no functional verification — deferred, accepted by Alexis 2026-08-09. Reason: *no YouTube Data API surface is exercised until the Epic 3 sync work, which will verify it functionally.* `google-api-python-client` moves to `2.198.0`, `google-auth` to `2.56.3`, `google-auth-httplib2` to `0.4.1`; every DoD probe exercises Django, admin and OAuth *init*, and none touches a YouTube Data API call. R3 covers only `google-auth-oauthlib`. [backend/requirements.txt]
+- [x] [Review][Defer] No CI, no Dependabot and no security audit covers the backend dependency set — deferred, pre-existing. `.github/workflows/ci.yml` triggers on `apps/**`, `libs/**`, `pnpm-lock.yaml`, `nx.json`, `package.json`; nothing matches `backend/requirements.txt`, so this PR runs **zero** automated jobs — and the workflow is a foreign nx/pnpm/prisma template that would not exercise this stack even if it fired. No `.github/dependabot.yml` exists, so the exact `==` pins have no update mechanism: the same reasoning that made 6.0.7→6.0.8 mandatory recurs on every future patch with nothing to trigger it. No `pip-audit`/`safety` was run over the other 13 pins or the transitive set this commit freezes. Owned by Stories 3.5/3.6. [.github/workflows/ci.yml:5-22]
+- [x] [Review][Defer] Base and DB images are unpinned while Django is pinned to the patch level — deferred, pre-existing. `FROM python:3.13-slim` and `db.image: postgres:15` are floating tags; patch/OS drift changes the build result with byte-identical requirements. Digest pinning was never considered. [backend/Dockerfile:2, docker-compose.yml]
+- [x] [Review][Defer] No `.dockerignore`; `backend/.venv` enters the build context via `COPY . .` — deferred, pre-existing. The recreated venv (Task 5) carries a second full Django install into the image. Runtime is shadowed by the `./backend:/app` bind mount, so this is build bloat rather than a correctness bug — but a `docker run` without the mount would execute against the stale tree. The story's "`.venv/` is gitignored — no repo impact" is true for git and false for the Docker build context. Fix is a one-line `backend/.dockerignore`. [backend/Dockerfile:11]
+- [x] [Review][Defer] Stale duplicate `backend/docker-compose.yml` documented as a trap and left armed — deferred, pre-existing. R5 records that it specifies `postgres:16` against the real stack's `postgres:15` and that nothing invokes it. No story owns its deletion (1.5 covers only volume naming), so a documented footgun with a **database major version mismatch** persists on the strength of a paragraph nobody will re-read. [backend/docker-compose.yml]
+- [x] [Review][Defer] The strict deprecation check only reaches import and check time — deferred, pre-existing. `-W error … manage.py check` never exercises a request path, an ORM query, a token decode or an OAuth exchange. "Zero warnings, first-party *and* third-party" from two libraries unclassified for Django 6.0 is a narrower result than it reads as. A real harness is Story 1.2. [_bmad-output/implementation-artifacts/1-1-upgrade-to-django-6-0-with-bounded-dependency-pins.md:46]
+- [x] [Review][Defer] `project-context.md:227` requires tests on every story PR; this story forbids them — deferred, pre-existing. The story defers the 70% *coverage gate* to 1.2 but never addresses the per-PR test rule, so a reviewer treating `project-context.md` as binding has grounds to reject a PR the story deliberately shipped test-free.
 
 ## Dev Notes
 
@@ -308,10 +337,19 @@ Also resolved: `cryptography 50.0.0`, `sqlparse 0.5.5`, `asgiref 3.12.1`.
 ### Completion Notes List
 
 **What changed:** exactly one production file — `backend/requirements.txt`, rewritten from 13
-unbounded requirements to 15 exact `==` pins plus `drf-spectacular`. No Python source, no settings,
-no Dockerfile, no compose file was touched. `git diff --stat` over `settings.py`, `middleware.py`,
-`organizer/`, `Dockerfile` and `docker-compose.yml` is empty, which satisfies the auth/CORS/cookie
-invariant DoD item by construction rather than by inspection.
+unbounded requirements to 14 exact `==` pins (the original 13 plus `drf-spectacular`). No Python
+source, no settings, no Dockerfile, no compose file was touched. `git diff --stat` over
+`settings.py`, `middleware.py`, `organizer/`, `Dockerfile` and `docker-compose.yml` is empty, which
+satisfies the auth/CORS/cookie invariant DoD item by construction rather than by inspection.
+
+> **Branch scope note (added by code review, 2026-08-09).** The two *story* commits are `14adefd`
+> and `7c790f6`, and the claims in this section are scoped to them — `git diff b592f2b..7c790f6`
+> is the diff they describe. The branch also carries a third, unrelated commit `ec1c62d`
+> ("Add tests for canon sync, token counting, and report rendering") adding ~391 files / ~51k
+> insertions under `.claude/`, plus `CLAUDE.md` and `.gitignore`. It is BMad/agent tooling, not
+> story work, and its message is not a Conventional Commit. Alexis accepted it staying on the
+> branch, so **the PR to `develop` will not match the three-file File List below** — read that
+> list as "what Story 1.1 changed", not "what this branch changes".
 
 **All three named risks failed to materialise**, and each was verified rather than assumed:
 
@@ -321,7 +359,8 @@ invariant DoD item by construction rather than by inspection.
   `https://localhost:8000` under Django 6.0. No dev-server improvisation needed.
 - **R3 (OAuth stack bump regressing the PKCE fix):** the `Flow.code_verifier` contract that
   commit `8b8d48e` depends on is intact under `google-auth-oauthlib 1.4.0`. Verified at library
-  level; **not** a substitute for the end-to-end login (see the outstanding item below).
+  level, then confirmed end to end by the manual login below — the library-level check alone
+  would not have been sufficient.
 
 **Third-party deprecation warnings: none.** The Dev Notes anticipated having to record
 `site-packages` noise from SimpleJWT / django-extensions and move on. There was none to record —
@@ -375,11 +414,16 @@ point for real users, so the app is effectively unloggable-into through its own 
 
 ### File List
 
+Scoped to the two story commits (`14adefd`, `7c790f6`). The branch additionally carries the
+unrelated tooling commit `ec1c62d` — see the Branch scope note in Completion Notes.
+
 | File | Change |
 | --- | --- |
 | `backend/requirements.txt` | Modified — full rewrite to exact pins; added `drf-spectacular==0.30.0`; added the trailing newline the file lacked. |
 | `_bmad-output/implementation-artifacts/1-1-upgrade-to-django-6-0-with-bounded-dependency-pins.md` | Added — this story file (untracked before this branch). |
-| `_bmad-output/implementation-artifacts/sprint-status.yaml` | Modified — story status → `in-progress` → `review`; `last_updated` bumped. |
+| `_bmad-output/implementation-artifacts/sprint-status.yaml` | Modified — story status → `in-progress` → `review`; `last_updated` bumped. Later, by code review: `last_updated` restored to ISO-8601, and an `action_items` list added carrying `AI-1` (the frontend Sign-in defect). |
+| `_bmad-output/implementation-artifacts/deferred-work.md` | Added by code review — the 8 deferred findings. |
+| `…/architecture/architecture-youtube-organizer-2026-07-24/ARCHITECTURE-SPINE.md` | Modified by code review — Stack table now records `6.0.x` shipped at `6.0.8`, with the security rationale, instead of the stale `6.0.7`. |
 
 Not modified, deliberately: `backend/Dockerfile`, `backend/youtube_organizer/settings.py`,
 `backend/youtube_organizer/middleware.py`, everything under `backend/organizer/`, `docker-compose.yml`.
@@ -391,3 +435,4 @@ Not modified, deliberately: `backend/Dockerfile`, `backend/youtube_organizer/set
 | --- | --- |
 | 2026-08-09 | Upgraded backend to Django 6.0.8 and replaced all 13 unbounded requirements with exact `==` pins; added `drf-spectacular==0.30.0` (install only). Verified R1 (SimpleJWT), R2 (`runserver_plus` HTTPS) and R3 (PKCE `code_verifier` contract) all hold under the bump. Recreated the unrelocatable local venv. No source, settings, Docker or compose changes. AD-14, AD-17. |
 | 2026-08-09 | End-to-end Google OAuth login verified manually by Alexis against the backend; R3 confirmed end to end and `google-auth-oauthlib` stays at 1.4.0. Recorded a pre-existing frontend login defect (`MismatchingStateError`, missing `credentials: "include"` in `YoutubeHeader.tsx`) as out of scope for this story. Status → review. |
+| 2026-08-09 | Code review (3 adversarial layers): 5 decision-needed findings resolved (status quo accepted on all), 5 patches applied, 8 deferred, 10 dismissed. No backend source or `requirements.txt` change — every patch was documentation/bookkeeping: the frontend login defect filed as `AI-1` in `sprint-status.yaml`; `last_updated` restored to ISO-8601; the spine's stale `6.0.7` annotated to `6.0.x` shipped at `6.0.8`; three story-doc errors fixed (Task 4's undefined `[~]`, a dangling self-contradicting R3 pointer, pin count 15→14); File List and Completion Notes scoped to the two story commits now that the unrelated `ec1c62d` stays on the branch. |
