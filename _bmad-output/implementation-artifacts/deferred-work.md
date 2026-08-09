@@ -19,3 +19,17 @@ Items surfaced during reviews that are real but not actionable in the story that
 - **The strict deprecation check only reaches import and check time.** `-W error … manage.py check` never exercises a request path, an ORM query, a token decode or an OAuth exchange, so "zero warnings, first-party and third-party" is a narrower result than it reads as. A real harness is Story 1.2.
 
 - **`project-context.md:227` requires tests on every story PR; Story 1.1 forbids them.** The story defers the 70% coverage gate to 1.2 but never addresses the per-PR test rule, so a reviewer treating `project-context.md` as binding has grounds to reject a PR the story deliberately shipped test-free.
+
+## Deferred from: `spec-ci-gate-stack.md` (2026-08-09)
+
+- source_spec: `spec-ci-gate-stack.md`
+  summary: `.github/pull_request_template.md` auto-applies to every PR but is pure Accountr — it instructs `pnpm exec nx run backend:test --coverage`, cites Prisma DTOs / `HttpException` filters / money-as-string, and links to `Docs/MVPDefinition/…` paths that do not exist here.
+  evidence: The user scoped this change to `ci.yml` + hooks and explicitly did not select the PR template. Real and live though: `project-context.md` requires all checklist items ticked before merge, so the template is currently impossible to satisfy honestly. The file is now flagged accurately in `project-context.md` rather than rewritten.
+
+- source_spec: `spec-ci-gate-stack.md`
+  summary: `usePlaylists.ts` asserts its response type instead of validating it — `snippet` is declared required though the YouTube API omits it for private/deleted items, and `data.items` is not checked to be an array.
+  evidence: Pre-existing runtime exposure, unchanged by this story: the previous `(item: any)` had exactly the same hazard, and one malformed item still throws inside `.map`, is swallowed by the catch, and surfaces as "An unknown error occurred". Epic 2 deletes this file, so hardening it now is throwaway work.
+
+- source_spec: `spec-ci-gate-stack.md`
+  summary: `.githooks/pre-push` ignores the ref list git supplies on stdin, so branch deletions and tag-only pushes pay a full typecheck + lint + build cycle for zero coverage.
+  evidence: Confirmed by reading the hook — it never reads stdin. Wasteful rather than incorrect (CI skips those pushes entirely), and the dangerous stdin interaction was fixed in this story via `manage.py test --noinput`.

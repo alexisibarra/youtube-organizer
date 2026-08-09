@@ -1,0 +1,119 @@
+#!/bin/sh
+# Run the CI gate stack locally before a push leaves the machine.
+#
+# Runs the same gates as .github/workflows/ci.yml so a failure costs seconds here
+# instead of a CI cycle. Two deliberate divergences from the workflow:
+#
+#   1. Backend layers are SKIPPED (not failed) when Django or the database is
+#      unreachable. The documented backend workflow is Docker-based, so a laptop
+#      with the stack down legitimately cannot run them. CI always has both.
+#   2. `manage.py migrate` is NOT run. CI migrates a throwaway service database;
+#      doing that here would mutate the developer's dev database as a side effect
+#      of pushing. `makemigrations --check` still catches the failure that matters.
+#
+# Everything else blocks the push. CI remains the authoritative gate.
+#
+# Activate once per clone:  git config core.hooksPath .githooks
+# Bypass in an emergency:   git push --no-verify
+
+set -e
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+fail() {
+	echo ""
+	echo "✗ $1 failed. Fix it before pushing (or --no-verify if you must)."
+	exit 1
+}
+
+echo "Running CI checks before push..."
+
+# --- Frontend ------------------------------------------------------------
+
+if ! command -v npm >/dev/null 2>&1; then
+	echo "✗ npm is not on PATH. If you use nvm, ensure your shell profile is"
+	echo "  loaded for git hooks, or run the checks manually before pushing."
+	exit 1
+fi
+
+if [ ! -x frontend/node_modules/.bin/tsc ]; then
+	echo "✗ frontend dependencies are missing or incomplete."
+	echo "  Run 'cd frontend && npm ci' (matches CI; 'npm install' would rewrite"
+	echo "  package-lock.json and can install a tree CI never reproduces)."
+	exit 1
+fi
+
+echo "→ [1/6] frontend typecheck"
+(cd frontend && npx tsc --noEmit) || fail "Type check"
+
+echo "→ [2/6] frontend lint"
+(cd frontend && npm run lint) || fail "Lint"
+
+echo "→ [3/6] frontend production build"
+(cd frontend && npm run build) || fail "Build"
+
+# --- Backend -------------------------------------------------------------
+
+if [ -x backend/.venv/bin/python ]; then
+	PY="$repo_root/backend/.venv/bin/python"
+else
+	PY="$(command -v python3 || true)"
+fi
+
+# The documented backend workflow is Docker-based (make up), so a fresh clone has
+# no virtualenv and a bare system python3 without Django. Skipping is correct there;
+# blocking every push on a missing interpreter is not.
+backend_unavailable() {
+	echo ""
+	echo "⚠️  SKIPPED backend checks — $1"
+	echo "    The documented backend workflow is Docker-based ('make up'); a local"
+	echo "    virtualenv at backend/.venv is optional. CI runs these regardless."
+	echo ""
+	echo "✅ Frontend checks passed, backend NOT checked. Proceeding with push —"
+	echo "   a green push is not a green CI."
+	exit 0
+}
+
+[ -n "$PY" ] || backend_unavailable "no Python interpreter found."
+(cd backend && "$PY" -c "import django") 2>/dev/null \
+	|| backend_unavailable "Django is not importable by $PY."
+
+echo "→ [4/6] backend system check"
+(cd backend && "$PY" manage.py check) || fail "Django system check"
+
+# DB-free, and the exact check CI performs — catches a model change with no
+# migration file, which is the cheapest CI failure to prevent locally.
+echo "→ [5/6] backend migration check"
+(cd backend && "$PY" manage.py makemigrations --check --dry-run) \
+	|| fail "Missing migration (run makemigrations)"
+
+# Probe the real database, not just the port: any listener on 5432 (another
+# project's stack, a stale tunnel) would satisfy a bare TCP connect and then
+# fail authentication inside manage.py test.
+if (cd backend && "$PY" -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'youtube_organizer.settings')
+os.environ.setdefault('POSTGRES_HOST', 'localhost')
+django.setup()
+from django.db import connection
+connection.ensure_connection()
+") 2>/dev/null
+then
+	# --noinput: git supplies the pushed ref list on stdin, which Django would
+	# otherwise consume as the answer to its 'delete stale test database?' prompt.
+	echo "→ [6/6] backend tests"
+	(cd backend && POSTGRES_HOST="${POSTGRES_HOST:-localhost}" "$PY" manage.py test --noinput) \
+		|| fail "Backend tests"
+	echo ""
+	echo "✅ All CI checks passed. Proceeding with push..."
+else
+	echo ""
+	echo "⚠️  [6/6] SKIPPED backend tests — no reachable database."
+	echo "    Start the stack with 'make up' to run them locally."
+	echo ""
+	echo "✅ Other checks passed, backend tests NOT run. Proceeding with push —"
+	echo "   CI will run them regardless; a green push is not a green CI."
+fi
+
+exit 0
