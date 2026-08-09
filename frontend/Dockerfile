@@ -1,5 +1,7 @@
 # Frontend Dockerfile
-FROM node:20-alpine
+# Keep the major in step with frontend/.nvmrc — CI, the pre-push hook and this
+# image must all run the same Node, or `make up` validates a runtime CI never uses.
+FROM node:22-alpine
 
 WORKDIR /app
 

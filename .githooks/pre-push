@@ -4,12 +4,23 @@
 # Runs the same gates as .github/workflows/ci.yml so a failure costs seconds here
 # instead of a CI cycle. Two deliberate divergences from the workflow:
 #
-#   1. Backend layers are SKIPPED (not failed) when Django or the database is
-#      unreachable. The documented backend workflow is Docker-based, so a laptop
-#      with the stack down legitimately cannot run them. CI always has both.
+#   1. Backend layers are SKIPPED (not failed) when the backend toolchain or the
+#      database is unreachable. The documented backend workflow is Docker-based,
+#      so a laptop with the stack down legitimately cannot run them. CI always
+#      has both. Frontend layers are NOT skippable — see the note below.
 #   2. `manage.py migrate` is NOT run. CI migrates a throwaway service database;
 #      doing that here would mutate the developer's dev database as a side effect
 #      of pushing. `makemigrations --check` still catches the failure that matters.
+#
+# Why the frontend blocks where the backend skips: the frontend gate is the only
+# one that runs on every push, and `frontend/node_modules` is a one-time `npm ci`
+# away. `make up` keeps its node_modules in the frontend_node_modules volume, so
+# a Docker-only developer must install once on the host to push. That is a stated
+# prerequisite, not an oversight.
+#
+# Node version: read from frontend/.nvmrc, the same file CI's node-version-file
+# points at. A mismatch blocks the push — a hook running a different Node than
+# CI cannot predict CI, which is the hook's entire purpose.
 #
 # Everything else blocks the push. CI remains the authoritative gate.
 #
@@ -37,10 +48,22 @@ if ! command -v npm >/dev/null 2>&1; then
 	exit 1
 fi
 
+want_node="$(tr -d ' \t\r\n' < frontend/.nvmrc)"
+have_node="$(node -v 2>/dev/null || true)"
+if [ "$have_node" != "$want_node" ]; then
+	echo "✗ Node version mismatch: frontend/.nvmrc wants $want_node, this shell has ${have_node:-none}."
+	echo "  CI resolves the same file via node-version-file, so a green hook on a"
+	echo "  different Node does not predict a green CI."
+	echo "  Fix:  cd frontend && nvm install   (nvm reads .nvmrc)"
+	exit 1
+fi
+
 if [ ! -x frontend/node_modules/.bin/tsc ]; then
 	echo "✗ frontend dependencies are missing or incomplete."
 	echo "  Run 'cd frontend && npm ci' (matches CI; 'npm install' would rewrite"
 	echo "  package-lock.json and can install a tree CI never reproduces)."
+	echo "  'make up' keeps node_modules inside a Docker volume, so a host install"
+	echo "  is required once even if you only ever run the app in containers."
 	exit 1
 fi
 
@@ -62,22 +85,34 @@ else
 fi
 
 # The documented backend workflow is Docker-based (make up), so a fresh clone has
-# no virtualenv and a bare system python3 without Django. Skipping is correct there;
-# blocking every push on a missing interpreter is not.
+# no virtualenv and a bare system python3 without the requirements. Skipping is
+# correct there; blocking every push on a missing interpreter is not.
 backend_unavailable() {
 	echo ""
-	echo "⚠️  SKIPPED backend checks — $1"
+	echo "⚠️  SKIPPED backend checks (layers 4-6 of 6) — $1"
 	echo "    The documented backend workflow is Docker-based ('make up'); a local"
 	echo "    virtualenv at backend/.venv is optional. CI runs these regardless."
+	if [ -n "$2" ]; then
+		echo ""
+		echo "    Probe output (in case this is a broken environment, not a missing one):"
+		echo "$2" | sed 's/^/      /'
+	fi
 	echo ""
 	echo "✅ Frontend checks passed, backend NOT checked. Proceeding with push —"
 	echo "   a green push is not a green CI."
 	exit 0
 }
 
-[ -n "$PY" ] || backend_unavailable "no Python interpreter found."
-(cd backend && "$PY" -c "import django") 2>/dev/null \
-	|| backend_unavailable "Django is not importable by $PY."
+[ -n "$PY" ] || backend_unavailable "no Python interpreter found." ""
+
+# Probe the whole import surface the next three layers need, not just Django: a
+# system python3 with Django but without psycopg2 would pass an `import django`
+# gate and then hard-fail inside makemigrations, blocking the push that this
+# skip path exists to allow. Probe stderr is surfaced rather than swallowed —
+# otherwise a settings ImportError or a broken venv is indistinguishable from a
+# clean "backend not installed here".
+probe_out="$( (cd backend && "$PY" -c "import django, psycopg2") 2>&1 )" \
+	|| backend_unavailable "the backend toolchain is not importable by $PY." "$probe_out"
 
 echo "→ [4/6] backend system check"
 (cd backend && "$PY" manage.py check) || fail "Django system check"
@@ -91,15 +126,19 @@ echo "→ [5/6] backend migration check"
 # Probe the real database, not just the port: any listener on 5432 (another
 # project's stack, a stale tunnel) would satisfy a bare TCP connect and then
 # fail authentication inside manage.py test.
-if (cd backend && "$PY" -c "
+# Assign inside an || list: a bare `db_probe=$(failing-cmd)` would trip `set -e`
+# and abort the hook instead of taking the skip path.
+db_ok=1
+db_probe="$( (cd backend && "$PY" -c "
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'youtube_organizer.settings')
 os.environ.setdefault('POSTGRES_HOST', 'localhost')
 django.setup()
 from django.db import connection
 connection.ensure_connection()
-") 2>/dev/null
-then
+") 2>&1 )" || db_ok=0
+
+if [ "$db_ok" -eq 1 ]; then
 	# --noinput: git supplies the pushed ref list on stdin, which Django would
 	# otherwise consume as the answer to its 'delete stale test database?' prompt.
 	echo "→ [6/6] backend tests"
@@ -109,8 +148,12 @@ then
 	echo "✅ All CI checks passed. Proceeding with push..."
 else
 	echo ""
-	echo "⚠️  [6/6] SKIPPED backend tests — no reachable database."
+	echo "⚠️  [6/6] SKIPPED backend tests — the database is not reachable."
 	echo "    Start the stack with 'make up' to run them locally."
+	echo ""
+	echo "    Probe output (a wrong password or a settings error lands here too,"
+	echo "    and is not the same thing as a stopped database):"
+	echo "$db_probe" | sed 's/^/      /'
 	echo ""
 	echo "✅ Other checks passed, backend tests NOT run. Proceeding with push —"
 	echo "   CI will run them regardless; a green push is not a green CI."

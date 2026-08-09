@@ -33,3 +33,9 @@ Items surfaced during reviews that are real but not actionable in the story that
 - source_spec: `spec-ci-gate-stack.md`
   summary: `.githooks/pre-push` ignores the ref list git supplies on stdin, so branch deletions and tag-only pushes pay a full typecheck + lint + build cycle for zero coverage.
   evidence: Confirmed by reading the hook — it never reads stdin. Wasteful rather than incorrect (CI skips those pushes entirely), and the dangerous stdin interaction was fixed in this story via `manage.py test --noinput`.
+
+## Deferred from: code review of spec-ci-gate-stack.md (2026-08-09)
+
+- **`postgres:15` in CI and the root compose file, `postgres:16` in `backend/docker-compose.yml`.** The new `ci.yml:87` pins `postgres:15` and `.githooks/pre-push:113` tells developers to run `make up` for a local database — without resolving which compose file that is. At least one local environment therefore tests against a different Postgres major than CI. Already recorded as Story 1.1 Risk R5 ("stale duplicate `backend/docker-compose.yml` documented as a trap and left armed"); this review confirms the trap is now load-bearing, because a gate stack has started pointing at it. No story owns the deletion.
+
+- **The hook closes the stdin hazard one consumer at a time instead of once.** `manage.py test --noinput` (`.githooks/pre-push:106`) fixes the Django prompt that would otherwise eat git's ref list, but `npm run lint`, `npm run build`, `manage.py check` and `makemigrations --check` all inherit that same stdin. A single `exec </dev/null` after the hook's own reads would close the class for every tool added later; the per-flag fix leaves the next one exposed. Extends the stdin entry above rather than replacing it — that one is about wasted work on ref-less pushes, this one about prompt consumption.

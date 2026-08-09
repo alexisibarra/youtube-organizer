@@ -9,8 +9,10 @@ backend-migrate:
 
 # --- Frontend targets ---
 
+# npm ci, not npm install: it installs exactly package-lock.json (the tree CI and
+# the pre-push hook reproduce) instead of rewriting the lockfile.
 frontend-install:
-	cd frontend && npm install
+	cd frontend && npm ci
 
 frontend-dev:
 	cd frontend && npm run dev

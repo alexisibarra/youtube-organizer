@@ -27,7 +27,7 @@
 > | `pnpm exec nx affected -t build` | `cd frontend && npm run build` |
 > | `nx run backend:prisma-migrate` / `prisma migrate deploy` | `python manage.py makemigrations --check --dry-run` then `python manage.py migrate` |
 > | Trigger paths `apps/**`, `libs/**`, `nx.json`, `pnpm-lock.yaml` | **No paths filter.** GitHub reports nothing for a filtered-out job, so with these four as *required* checks (§7) a docs-only PR would be permanently unmergeable. Four short jobs on every PR beats an unmergeable PR. |
-> | Node 22 hardcoded in the workflow | `node-version-file: frontend/.nvmrc` — one source of truth shared by CI, nvm and the pre-push hook |
+> | Node 22 hardcoded in the workflow | `node-version-file: frontend/.nvmrc` (an exact `vX.Y.Z` pin) — one source of truth shared by CI, nvm and the pre-push hook, which reads the same file and blocks a push made on a different Node |
 > | `fetch-depth: 0` (needed for `nx affected`) | Not needed — no affected graph |
 > | Test-job env: `DATABASE_URL`, `JWT_*_SECRET`, `EXCHANGE_RATE_*` | `POSTGRES_DB/USER/PASSWORD/HOST/PORT` only. **`POSTGRES_HOST` must be `localhost`** — `settings.py` defaults it to `db`, the compose service name. Django `SECRET_KEY` and the `GOOGLE_*` vars are **not** set: `settings.py` hardcodes the key and `google_auth_views.py` falls back to placeholder literals. Any backend test touching OAuth must set them itself. |
 >
@@ -56,7 +56,7 @@ Code passes through four layers before it reaches production:
 
 1. **Pre-PR gates (manual, developer-run)** — type-check, prod build, visual verification, dependency check. See `docs/FRONTEND-STACK.md` §8 and the project CLAUDE.md.
 2. **Local `pre-push` git hook** — runs the full CI pipeline locally before a push leaves the machine.
-3. **GitHub Actions CI** — typecheck → lint → test (with DB) → build → (on `main`) push Docker images.
+3. **GitHub Actions CI** — typecheck + lint → test (with DB) → build. No image push: `push-to-ghcr` is deferred whole with deploy (AD-17), so nothing publishes images here yet.
 4. **Deploy workflow** — manual `workflow_dispatch` to the Linux server over SSH.
 
 Branch flow: `feat/story-* ──PR──▶ develop ──PR──▶ main (tag vX.Y.Z)`.
