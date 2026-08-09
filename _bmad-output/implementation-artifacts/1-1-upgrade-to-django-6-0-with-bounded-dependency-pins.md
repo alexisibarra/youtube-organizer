@@ -4,7 +4,7 @@ baseline_commit: b592f2b42fab61049076923c0d0b30a0f604a1ac
 
 # Story 1.1: Upgrade to Django 6.0 with bounded dependency pins
 
-Status: in-progress
+Status: review
 
 Epic: 1 — Backend platform · Story key: `1-1-upgrade-to-django-6-0-with-bounded-dependency-pins`
 Branch: `feat/story-1-1-django-6-bounded-pins` → PR → `develop` (squash). Never commit to `main`/`develop`.
@@ -43,7 +43,7 @@ confirming no regression from the framework bump.
 - [x] `curl -k -i https://localhost:8000/api/auth/me/` (no cookie) → **401**, not 500.
 - [x] `curl -k -i https://localhost:8000/admin/login/` → **200**.
 - [x] SimpleJWT still mints under Django 6.0 — the shell probe in Dev Notes returns a token string.
-- [ ] Full Google OAuth login exercised manually end to end in the browser (or, if Google credentials are unavailable, that is stated explicitly in the Completion Notes — do not claim it). → **PENDING HUMAN ACTION.** Credentials *are* present in `backend/.env`, so the "unavailable" escape hatch does not apply. The agent cannot drive an interactive Google consent screen. The R3 mechanism was verified at library level instead (see Debug Log) — this is a narrower check, not a substitute.
+- [x] Full Google OAuth login exercised manually end to end in the browser (or, if Google credentials are unavailable, that is stated explicitly in the Completion Notes — do not claim it). → **Done by Alexis, against the backend directly** (`/api/auth/google/` → Google consent → `/api/oauth2callback/` → `/api/auth/me/` returns the user). Consent, code exchange **with the PKCE verifier**, user upsert, login and JWT mint all succeeded under Django 6.0 — R3 confirmed end to end, not just at library level. The **frontend** "Sign in" button fails separately with `MismatchingStateError`; that is a pre-existing defect unrelated to this story — see Completion Notes → "Defect found, not fixed here".
 - [x] Auth/CORS/cookie settings byte-for-byte unchanged (`git diff` on `settings.py` shows no change in the CORS/session/CSRF block). → `settings.py`, `middleware.py`, all of `organizer/`, `Dockerfile` and `docker-compose.yml` are byte-for-byte unchanged; `git diff --stat` is empty.
 
 ## Tasks / Subtasks
@@ -62,7 +62,7 @@ confirming no regression from the framework bump.
   - [x] If it raises: **STOP, do not patch or vendor SimpleJWT.** Record the traceback in Debug Log References and escalate — the fix is pulling Stories 1.3/1.4 forward, not repairing a dead dependency. → n/a, did not raise.
 - [~] **Task 4 — Regression-probe the existing routes (AC2)**
   - [x] The three `curl` probes in the DoD.
-  - [ ] Manual browser login through Google if credentials are present in `backend/.env`; verify the `access_token` HttpOnly cookie is set and `/api/auth/me/` then returns the user. → **PENDING HUMAN ACTION** (see Completion Notes).
+  - [x] Manual browser login through Google if credentials are present in `backend/.env`; verify the `access_token` HttpOnly cookie is set and `/api/auth/me/` then returns the user. → Done by Alexis against the backend directly; `/api/auth/me/` returns the user. The frontend entry point has a separate pre-existing defect (see Completion Notes).
   - [x] Confirm no schema drift: `manage.py makemigrations --check --dry-run`. → exit 0.
 - [x] **Task 5 — Refresh the stale local venv (optional but recommended)**
   - [x] `backend/.venv` holds Django 5.2.5, DRF 3.16.1 and **no** SimpleJWT — it is stale and will mislead any local `manage.py` run. Either reinstall it from the new `requirements.txt` or leave it alone and use the container exclusively. Do not "fix" code to satisfy the stale venv. → Recreated from the new pins; it was also **unrelocatable** (shebangs pointed at the repo's old path), so a reinstall alone would not have worked. `.venv/` is gitignored — no repo impact.
@@ -340,15 +340,38 @@ gitignored, so this has no repo footprint — it only removes a local trap.
 `manage.py check --deploy` was **not** run and `DEBUG`/`SECRET_KEY`/`ALLOWED_HOSTS` were left alone
 (AD-17 forbids it here). No tests were written — the `APITestCase` harness is Story 1.2.
 
-**⚠️ One DoD item is outstanding and is NOT claimed: the end-to-end Google browser login.**
-Google credentials *are* present in `backend/.env` (the live client id appears in the `auth_url`
-response), so the story's "if credentials are unavailable, state it" escape hatch does **not** apply
-— the check is genuinely owed. It cannot be automated: it requires driving Google's interactive
-consent screen with a real account. **Alexis must run it before this story is merged:** open
-`https://localhost:3000`, log in through Google, then confirm the `access_token` HttpOnly cookie is
-set and that `/api/auth/me/` returns the user. If it fails with `invalid_grant: Missing code
-verifier`, that is R3 after all — pin `google-auth-oauthlib==1.2.2` and note it, rather than
-touching the OAuth views.
+**End-to-end login: verified by Alexis.** The agent cannot drive Google's consent screen, so Alexis
+ran it manually against the backend directly — `/api/auth/google/` → Google consent →
+`/api/oauth2callback/` → `/api/auth/me/` returns the user. That path exercises the entire flow this
+story put at risk: consent, the code exchange **carrying the PKCE verifier**, the `User` upsert,
+`login()`, the SimpleJWT mint and the `access_token` HttpOnly cookie — all under Django 6.0 with the
+bumped Google stack. R3 is therefore confirmed end to end, not merely at library level.
+`google-auth-oauthlib` stays at `1.4.0`; the 1.2.2 fallback was not needed.
+
+### Defect found, not fixed here — frontend "Sign in" button
+
+Alexis's first attempt went through the frontend button and failed with
+`oauthlib.oauth2.rfc6749.errors.MismatchingStateError: (mismatching_state) CSRF Warning! State not
+equal in request and response.` **This is pre-existing and unrelated to this story** — evidence:
+
+- `git diff b592f2b..HEAD -- frontend/` is empty; no frontend file was touched on this branch.
+- The offending line dates to `f023cf4` (2025-08-16), roughly a year before this story.
+- The backend side is provably correct: `curl -H "Origin: https://localhost:3000"` against
+  `/api/auth/google/` returns `access-control-allow-credentials: true` and
+  `Set-Cookie: sessionid=…; HttpOnly; Path=/; SameSite=None; Secure`.
+
+**Root cause:** [`YoutubeHeader.tsx:21`](frontend/src/components/YoutubeHeader.tsx#L21) calls
+`fetch(\`${BACKEND_URL}/api/auth/google/\`)` with **no** `credentials: "include"`. On a cross-origin
+request the browser therefore discards the `Set-Cookie`, so the session that `GoogleAuthInitView`
+used to stash `oauth_state` (L48) and `oauth_code_verifier` (L53) is never persisted. The callback
+then compares against an absent/stale state and raises before it ever reaches the PKCE exchange.
+The same file gets this right at L57-59 for `/api/auth/me/`, which is why the session probe works
+and only the login button is broken.
+
+**Fix (one line, deliberately deferred):** `fetch(url, { credentials: "include" })`. Frontend files
+are Epic 2 per this story's own scope table, and touching one here would put an unrelated change in
+a dependency-pin PR. Worth filing as its own bug — the button is currently the only login entry
+point for real users, so the app is effectively unloggable-into through its own UI.
 
 ### File List
 
@@ -367,3 +390,4 @@ Not modified, deliberately: `backend/Dockerfile`, `backend/youtube_organizer/set
 | Date | Change |
 | --- | --- |
 | 2026-08-09 | Upgraded backend to Django 6.0.8 and replaced all 13 unbounded requirements with exact `==` pins; added `drf-spectacular==0.30.0` (install only). Verified R1 (SimpleJWT), R2 (`runserver_plus` HTTPS) and R3 (PKCE `code_verifier` contract) all hold under the bump. Recreated the unrelocatable local venv. No source, settings, Docker or compose changes. AD-14, AD-17. |
+| 2026-08-09 | End-to-end Google OAuth login verified manually by Alexis against the backend; R3 confirmed end to end and `google-auth-oauthlib` stays at 1.4.0. Recorded a pre-existing frontend login defect (`MismatchingStateError`, missing `credentials: "include"` in `YoutubeHeader.tsx`) as out of scope for this story. Status → review. |
