@@ -1,5 +1,5 @@
 # generated: 2026-07-24T20:26:51-0400
-# last_updated: 2026-08-09T17:30:00-0400
+# last_updated: 2026-08-12T21:00:00-0400
 # project: youtube-organizer
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-24T20:26:51-0400
-last_updated: 2026-08-09T17:30:00-0400
+last_updated: 2026-08-12T21:00:00-0400
 project: youtube-organizer
 project_key: NOKEY
 tracking_system: file-system
@@ -51,7 +51,7 @@ development_status:
   # Epic 1: Backend platform
   epic-1: in-progress
   1-1-upgrade-to-django-6-0-with-bounded-dependency-pins: done
-  1-2-layered-backend-package-skeleton-and-test-runner: backlog
+  1-2-layered-backend-package-skeleton-and-test-runner: review
   1-3-first-party-pyjwt-token-issue-verify-module: backlog
   1-4-cookie-authentication-class-and-middleware-retirement: backlog
   1-5-make-backup-target-named-volume-and-verified-restore: backlog

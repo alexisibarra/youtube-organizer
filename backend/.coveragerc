@@ -1,0 +1,14 @@
+[run]
+source = organizer
+# NFR-13's gate is stated over lines/statements/functions/branches. Turning branch
+# coverage on later would move the measured number under the gate's feet, so it is
+# on from the first measurement.
+branch = True
+omit =
+    */migrations/*
+    */tests/*
+    */__pycache__/*
+
+[report]
+show_missing = True
+skip_covered = False

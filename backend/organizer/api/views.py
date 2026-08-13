@@ -16,6 +16,3 @@ class MeView(APIView):
 			'email': user.email,
 			'profile_picture': profile_picture,
 		})
-from django.shortcuts import render
-
-# Create your views here.
