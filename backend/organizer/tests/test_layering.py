@@ -18,6 +18,25 @@ FORBIDDEN = {
     # organizer.models / django.db: AD-1 makes organizer.services the only writer of
     # application state, so a view reaching the ORM directly bypasses the whole rule.
     "api": ("organizer.youtube", "organizer.models", "django.db"),
+    # rest_framework_simplejwt turns Story 1.3's AC3 from a one-time grep into a
+    # standing gate: the first-party PyJWT module must never reach back for the
+    # library it replaces (AD-14). The other four encode the package docstring's
+    # contract — authentication answers "who is this request", nothing more.
+    #
+    # `rest_framework` itself is deliberately NOT forbidden: Story 1.4 puts a
+    # BaseAuthentication subclass in this package. Note the prefix match is exact
+    # or dotted, so "rest_framework" and "rest_framework_simplejwt" stay distinct.
+    #
+    # organizer.models is NOT forbidden either: get_user_from_claims reads
+    # django.contrib.auth's User, and reading is not the mutation AD-1 governs.
+    # Do not "tighten" this into a false positive.
+    "auth": (
+        "rest_framework_simplejwt",
+        "organizer.api",
+        "organizer.services",
+        "organizer.sync",
+        "organizer.youtube",
+    ),
 }
 
 
@@ -107,6 +126,18 @@ class LayerDependencyDirectionTests(SimpleTestCase):
             # only writer of application state.
             ("from organizer.models import UserSocialToken", "api", "organizer.models"),
             ("from django.db import transaction", "api", "django.db"),
+            # AD-14: the first-party token module may not reach back for the
+            # library it replaces. Both spellings — the `from X import name` one
+            # is how the violation is actually written.
+            ("import rest_framework_simplejwt", "auth", "rest_framework_simplejwt"),
+            (
+                "from rest_framework_simplejwt.tokens import AccessToken",
+                "auth",
+                "rest_framework_simplejwt.tokens",
+            ),
+            ("from organizer.services import tagging", "auth", "organizer.services"),
+            ("from organizer import services", "auth", "organizer.services"),
+            ("from . import youtube", "auth", "organizer.youtube"),
         ]
         for source, layer, expected in cases:
             with self.subTest(source=source):
@@ -127,6 +158,14 @@ class LayerDependencyDirectionTests(SimpleTestCase):
             ("from rest_framework.views import APIView", "api"),
             ("from django.conf import settings", "services"),
             ("from organizer.services.tagging import apply_tags", "api"),
+            # auth/ must keep importing these: `jwt` is the whole point (1.3), and
+            # rest_framework arrives with 1.4's BaseAuthentication subclass. A rule
+            # that forbade either would be discovered next story as an obstacle and
+            # "fixed" by weakening the guard.
+            ("import jwt", "auth"),
+            ("from rest_framework.authentication import BaseAuthentication", "auth"),
+            ("from django.contrib.auth import get_user_model", "auth"),
+            ("from .errors import InvalidToken", "auth"),
         ]
         for source, layer in allowed:
             with self.subTest(source=source):
