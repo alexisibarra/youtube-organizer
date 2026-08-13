@@ -12,6 +12,11 @@ backend-test:
 
 # Measures only; the 70% threshold (NFR-13) is not enforced yet — see
 # .github/workflows/ci.yml and story 1-4.
+#
+# `coverage` is installed into the image, and ./backend is bind-mounted over /app —
+# so pulling a commit that adds a requirement does NOT install it in a container
+# built earlier. If this dies with "executable file not found", rebuild:
+#   docker-compose build backend && docker-compose up -d backend
 backend-coverage:
 	docker-compose exec backend coverage run manage.py test --noinput
 	docker-compose exec backend coverage report

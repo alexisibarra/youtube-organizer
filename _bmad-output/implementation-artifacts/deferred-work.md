@@ -2,6 +2,18 @@
 
 Items surfaced during reviews that are real but not actionable in the story that found them.
 
+## Deferred from: code review of 1-2-layered-backend-package-skeleton-and-test-runner (2026-08-12)
+
+- **The layering guard's relative-import resolution ignores `node.level` and the containing package.** `backend/organizer/tests/test_layering.py:33-35` maps `from .x import y` to `organizer.x` regardless of depth or which layer directory the file sits in. A future `organizer/services/youtube.py` imported as `from .youtube import client` resolves to `organizer.youtube` and is reported as a violation — a false positive whose likely "fix" is weakening the rule. Dev Notes documented the coarseness deliberately ("tighten it then"); the packages are flat today, so this is real but not yet reachable.
+
+- **`google_auth_views.py` is outside every scanned layer directory and does violate the contracts the new docstrings state.** It is an `APIView` that builds a YouTube Data API client and executes a request inline (`:139-171`) and writes `UserSocialToken` directly (`:118`) — the API layer calling the gateway, and state mutated without passing through services. Story Question #2; the move belongs to 1.4/6.1, both of which rewrite the file. Consequence to carry: the AD-1 guard shipped as "proven to bite" has never run against a single real import, so its green result carries no information until this file lands inside a scanned layer.
+
+- **`coverage` is pinned into the runtime dependency set.** `backend/requirements.txt:17` is consumed wholesale by `backend/Dockerfile:6-7`; there is no dev/test split, so test instrumentation ships in the production image. Cheap now, and every later test-only dependency (factories, fakes, 1-4's test client helpers) follows the precedent set here.
+
+- **Three hand-maintained, divergent lists of "layers".** `test_skeleton.py:7-16` has eight entries (including `organizer.tests`, not an architectural layer), `test_skeleton.py:46-47` has five, `test_layering.py:15-19` has three. Adding a layer requires remembering all three; forgetting the third silently produces an unguarded layer. One declaration with per-layer flags eliminates the class.
+
+- **`.githooks/pre-push` claims CI parity it no longer has.** Line 4 states "Runs the same gates as `.github/workflows/ci.yml`", but line 145 runs bare `manage.py test` while CI now runs `coverage run manage.py test`. The story listed the hook as read-only, so it was correctly left alone — but the divergence is in the one file whose entire premise is predicting CI.
+
 ## Deferred from: code review of 1-1-upgrade-to-django-6-0-with-bounded-dependency-pins (2026-08-09)
 
 - **Transitive dependency closure is unpinned, so "reproducible" is not fully achieved.** _Reason for deferring: a lockfile is new-file scope Story 1.1 forbids; revisit at Story 1.3, when PyJWT becomes a first-party direct pin._ AC1 pins 14 direct requirements, but `PyJWT`, `cryptography`, `oauthlib`, `requests-oauthlib`, `httplib2`, `asgiref`, `sqlparse`, `jsonschema` and `uritemplate` float. Two consequences to carry forward: (a) the `Flow.code_verifier` contract Risk R3 was written to protect lives in `oauthlib`/`requests-oauthlib`, neither pinned — a later release can regress commit `8b8d48e` with `requirements.txt` unchanged; (b) "PyJWT 2.13.0 … no pin conflict ahead" rests on an unpinned transitive that loses its only requirer once Story 1.4 removes SimpleJWT.

@@ -1,6 +1,7 @@
 """AC1: the layered package skeleton exists and every layer is importable."""
 
 import importlib
+import pathlib
 
 from django.test import SimpleTestCase
 
@@ -32,8 +33,11 @@ class LayerPackagesImportTests(SimpleTestCase):
     def test_models_is_a_package_not_a_module(self):
         import organizer.models as models_package
 
-        self.assertTrue(
-            models_package.__file__.endswith("organizer/models/__init__.py"),
+        # pathlib, not endswith("organizer/models/__init__.py"): the literal separator
+        # would red-fail a correct layout on any platform using backslashes.
+        self.assertEqual(
+            pathlib.Path(models_package.__file__).parts[-3:],
+            ("organizer", "models", "__init__.py"),
             f"organizer.models resolved to {models_package.__file__}; expected the package.",
         )
 

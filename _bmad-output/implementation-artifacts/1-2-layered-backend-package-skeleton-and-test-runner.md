@@ -4,7 +4,7 @@ baseline_commit: 6e7c81a0be2be2164ab940634e1f13dd2dff15f5
 
 # Story 1.2: Layered backend package skeleton and test runner
 
-Status: review
+Status: done
 
 Epic: 1 — Backend platform · Story key: `1-2-layered-backend-package-skeleton-and-test-runner`
 Branch: `feat/story-1-2-backend-package-skeleton` → PR → `develop` (squash). Never commit to `main`/`develop`.
@@ -35,7 +35,7 @@ will later measure.
 
 Every command runs **inside the container** unless stated: `docker compose exec backend <cmd>`.
 
-- [x] `python -c "import organizer.api, organizer.auth, organizer.services, organizer.sync, organizer.youtube, organizer.models, organizer.management.commands, organizer.tests; print('ok')"` → `ok`.
+- [x] `python -c "import django; django.setup(); import organizer.api, organizer.auth, organizer.services, organizer.sync, organizer.youtube, organizer.models, organizer.management.commands, organizer.tests; print('ok')"` → `ok`, with `DJANGO_SETTINGS_MODULE` set. (Amended after code review: the bare `python -c` form originally written here cannot work — `organizer.models` reads settings at import time and raises `ImproperlyConfigured` before importing anything. `test_skeleton.py` encodes the same assertion permanently.)
 - [x] `python -c "import organizer.models as m; print(m.__file__)"` → path ends in `organizer/models/__init__.py` (package, not module).
 - [x] `backend/organizer/models.py` and `backend/organizer/tests.py` no longer exist (`git status` shows them deleted, not left alongside their packages — a stale `models.py` next to `models/` is an import ambiguity, and Python resolves the **package**, silently orphaning the module).
 - [x] `python manage.py check` → `System check identified no issues (0 silenced).`
@@ -121,6 +121,40 @@ Every command runs **inside the container** unless stated: `docker compose exec 
   - [x] **No AI/bot attribution anywhere** — commit message, PR title, PR body, code comments.
   - [x] The PR template is Accountr's and partly unrunnable here: tick what applies, strike the rest
         (see Dev Notes → "The PR template trap").
+
+### Review Findings
+
+_Code review 2026-08-12 — three parallel layers (adversarial, edge-case, acceptance) over `6e7c81a..8a5d67c`._
+
+**Decisions — resolved by Alexis 2026-08-12**
+
+- [x] [Review][Decision] **Coverage threshold: no `fail_under`** — **resolved: confirmed as shipped.** Story Question #1 is now answered: the harness + recorded baseline land here, `fail_under` turns on in 1-4 once the cookie-auth `APITestCase` makes 70% honestly reachable. No ratchet in the interim. Completion Notes' "confirmed at kickoff" is retroactively accurate; the residual risk — the baseline has no enforced floor until 1-4 — is accepted, not overlooked.
+- [x] [Review][Decision] **`.coveragerc` scope** — **resolved: widen to both packages and re-baseline** (see Patch below). `youtube_organizer/` no longer escapes the measurement or the future NFR-13 gate.
+- [x] [Review][Decision] **Guard breadth** — **resolved: add `api/` ✗ `organizer.models` / `django.db` now** (see Patch below), enforcing "`services` is the only writer of application state". `auth/`, `sync/` and `models/` stay unguarded per the spec's rules table, to be widened by a later story.
+
+**Patch**
+
+- [x] [Review][Patch] **Widen coverage measurement to `youtube_organizer/` and re-record the baseline** [backend/.coveragerc:2] — from decision 2. `youtube_organizer/middleware.py` (the JWT cookie middleware story 1-4 retires), `settings.py` and the project `urls.py` were unmeasured, so the 53% baseline and the future 70% gate described only a subset of the backend and code could be moved out of `organizer/` to leave the gate's view. Re-measure and update the recorded baseline in Completion Notes so 1-4 inherits a true distance.
+- [x] [Review][Patch] **Enforce "services is the only writer" on the `api/` layer** [backend/organizer/tests/test_layering.py:18] — from decision 3. Add `organizer.models` and `django.db` to `api/`'s forbidden prefixes, so an API view doing `from organizer.models import UserSocialToken` + `.save()` fails the guard instead of passing green.
+
+- [x] [Review][Patch] **HIGH — the guard is blind to `from <package> import <submodule>`, the most idiomatic spelling of the violation it exists to catch** [backend/organizer/tests/test_layering.py:33-37] — `_imported_modules` yields only `node.module` for `ImportFrom` and never inspects `alias.name`. Verified by running the shipped function: `from . import youtube`, `from .. import youtube` and `from organizer import youtube` all yield `['organizer']`, and `from django import http` yields `['django']` — none matches a `FORBIDDEN` prefix, so all four pass inside `services/`. Only `from .youtube import client` and bare `import x` are caught. The DoD's "proven to bite" exercise used `import rest_framework`, which happens to hit the one path that works, so the proof never covered the gap. This guard is the sole mechanism enforcing AD-1 for every later story.
+- [x] [Review][Patch] **The self-test ratifies the blind spot instead of exposing it** [backend/organizer/tests/test_layering.py:88-107] — every case in `test_guard_detects_a_forbidden_import` is a form the detector already handles; none is `from . import youtube` or `from django import http`. Extend the case list alongside the fix above, or the meta-test keeps certifying a hole.
+- [x] [Review][Patch] **The retarget landed in `ci.yml` but left two authoritative docs contradicting it** [Docs/CI-AND-GITHUB-GATES.md:37-38, _bmad-output/project-context.md:249] — the CI doc still reads "the suite arrives with story 1-2's test runner; `manage.py test` runs today against an **empty suite**" (now false — 7 tests), and `project-context.md` still says the backend coverage gate arrives "with 1-2". `CLAUDE.md` makes `Docs/CI-AND-GITHUB-GATES.md` authoritative and says it wins over code, so the binding document currently asserts a gate that does not exist.
+- [x] [Review][Patch] **DoD checkbox 1 is ticked with output the command cannot produce** [line 38 of this file] — the literal `python -c "import organizer.api, …"` raises `ImproperlyConfigured` in the container; `organizer.models` reads settings at import time. Completion Notes (line 605) discloses this honestly, but the checkbox was left as written. Amend line 38 to the form actually run (`DJANGO_SETTINGS_MODULE` + `django.setup()`).
+- [x] [Review][Patch] **Source is decoded with the ambient locale encoding** [backend/organizer/tests/test_layering.py:56] — `path.read_text()` with no `encoding="utf-8"`. Under a `C`/`POSIX` locale runner, any non-ASCII byte in a scanned file raises `UnicodeDecodeError`: the guard crashes with an environmental traceback instead of reporting a layering verdict.
+- [x] [Review][Patch] **CI drops the `--noinput` that both the Makefile and the pre-push hook carry** [.github/workflows/ci.yml:144] — `coverage run manage.py test` prompts `Type 'yes' to delete` against a stale `test_youtube_organizer` database. The service container is fresh per run today, so this is hardening rather than a live break, but the three call sites should not disagree.
+- [x] [Review][Patch] **The new Makefile targets fail on any container built before this commit** [Makefile:53-60] — `docker-compose exec backend coverage …` runs inside the running container; `coverage` exists only after the image is rebuilt for the changed `requirements.txt`, and `./backend:/app` is a bind mount so a source pull does not reinstall it. First developer to pull gets `executable file not found`. Neither target nor comment mentions `docker-compose build`.
+- [x] [Review][Patch] **Package-path assertion is hardcoded to POSIX separators** [backend/organizer/tests/test_skeleton.py:36] — `endswith("organizer/models/__init__.py")` red-fails a correct package layout on any platform using `\`. `pathlib`/`os.sep`-independent comparison costs nothing.
+
+**Deferred**
+
+- [x] [Review][Defer] **Relative-import resolution ignores `node.level` and the containing package** [backend/organizer/tests/test_layering.py:33-35] — deferred, spec-acknowledged. `from .x import y` maps to `organizer.x` regardless of depth or which layer the file sits in, so a future `organizer/services/youtube.py` imported as `from .youtube import client` is a false positive (correct resolution is `organizer.services.youtube`). Dev Notes documented the coarseness and said "tighten it then"; the packages are flat today.
+- [x] [Review][Defer] **`google_auth_views.py` sits outside every scanned directory and does violate the contracts the new docstrings state** [backend/organizer/google_auth_views.py:118,139-171] — deferred, this is Story Question #2 and the move belongs to 1.4/6.1. It is an `APIView` that builds a YouTube Data API client and executes a request inline, and writes `UserSocialToken` directly — API calling the gateway, and mutating state without services. Consequence worth carrying: the guard has never run against a single real import, so its green result carries no information yet.
+- [x] [Review][Defer] **`coverage` is pinned into the runtime dependency set** [backend/requirements.txt:17, backend/Dockerfile:6-7] — deferred, pre-existing. There is no dev/test split, so test instrumentation ships in the production image. Every later test-only dependency will follow the precedent set here.
+- [x] [Review][Defer] **Three hand-maintained, divergent lists of "layers"** [backend/organizer/tests/test_skeleton.py:7-16, :46-47; test_layering.py:15-19] — deferred, maintainability. Eight entries, then five, then three. Adding a layer means remembering three places; forgetting the third produces an unguarded layer, silently.
+- [x] [Review][Defer] **The pre-push hook's CI-parity claim is now false** [.githooks/pre-push:4 vs :145] — deferred, the file is "read but do not edit" in this story. It runs bare `manage.py test` while CI now runs `coverage run`. Divergence in a file whose entire premise is predicting CI.
+
+_Dismissed as noise (6): dynamic imports bypassing AST analysis (inherent to the chosen approach, spec-selected); `coverage report` no-data branch (`coverage run` always writes `.coverage`); missing-layer assertion short-circuit and `SyntaxError` abort (a broken file fails the suite regardless); `if: always()` / artifact upload on the coverage step (not required by spec); tab indentation in `api/views.py` and the absent backend linter (spec forbids reformatting; a backend linter is out of scope)._
 
 ## Dev Notes
 
@@ -558,7 +592,26 @@ api/auth/google/      -> 200 {"auth_url":"https://accounts.google.com/o/oauth2/a
 ```
 
 **6. Coverage (container, `coverage run manage.py test` + `coverage report`).** Full table in
-Completion Notes; `TOTAL 97 stmts, 43 miss, 4 branch, 53%`.
+Completion Notes; originally `TOTAL 97 stmts, 43 miss, 4 branch, 53%` over `organizer/` alone.
+After the code-review patch widened `source` to both packages: `TOTAL 144 stmts, 56 miss, 6 branch, 59%`.
+
+**9. Post-review verification (container, after the patches below).** The layering guard was
+re-proven to bite on the two forms it previously missed:
+
+```
+$ printf '\nfrom . import youtube\n' >> organizer/services/__init__.py
+$ python manage.py test organizer.tests.test_layering --noinput
+services/__init__.py:11 imports 'organizer.youtube' — forbidden in organizer/services/ (AD-1).
+Ran 3 tests / FAILED (failures=1)
+
+$ printf '\nfrom django.db import transaction\n' >> organizer/api/views.py
+$ python manage.py test organizer.tests.test_layering --noinput
+api/views.py:20 imports 'django.db' — forbidden in organizer/api/ (AD-1).
+Ran 3 tests / FAILED (failures=1)
+```
+
+Both violations reverted; full suite back to `Ran 7 tests / OK`. Before the patch, the first of
+these two passed green — that is the defect the review found.
 
 **7. `git diff --stat backend/youtube_organizer/settings.py`** → empty. CORS / session / CSRF /
 `REST_FRAMEWORK` blocks untouched.
@@ -586,11 +639,15 @@ code problem.
 - **AC2 satisfied.** `manage.py test` discovers and runs **7 tests, OK, exit 0** — a non-zero count,
   which is the point of AC2. `SimpleTestCase` throughout, so the suite also runs when the DB is
   unreachable (the pre-push hook's skip path).
-- **Coverage baseline: 53%** (97 statements, 43 missed, branch coverage on), measured by
-  `coverage run manage.py test && coverage report` in the container. Breakdown of the miss:
-  `google_auth_views.py` 37% (64 stmts, 39 missed) is essentially the whole gap, exactly as Dev
-  Notes predicted; `api/views.py` 67%, `models/user_social_token.py` 92%, everything else 100%.
-  **Distance to the NFR-13 gate: 17 points**, all of it in OAuth code that Stories 1.4 and 6.1 own.
+- **Coverage baseline: 59%** (144 statements, 56 missed, branch coverage on), measured by
+  `coverage run manage.py test && coverage report` in the container. _(Revised at code review from
+  the original 53%/97-statement figure, which sourced `organizer/` only. Widening `source` to include
+  `youtube_organizer/` **raised** the number, because `settings.py` and the project `urls.py` are
+  fully exercised at import.)_ Breakdown of the miss: `google_auth_views.py` 37% (64 stmts, 39 missed)
+  is still essentially the whole gap, exactly as Dev Notes predicted; `wsgi.py`/`asgi.py` 0% (8 stmts,
+  never loaded by the test runner), `middleware.py` 30%, `api/views.py` 67%,
+  `models/user_social_token.py` 92%, everything else 100%.
+  **Distance to the NFR-13 gate: 11 points**, almost all of it in OAuth code that Stories 1.4 and 6.1 own.
 - **`fail_under` deliberately NOT set** (story decision, confirmed at kickoff). The `ci.yml:11` TODO
   was retargeted to story 1-4 with a one-line reason rather than deleted; CI now measures and prints
   coverage on every run, with no `continue-on-error` anywhere.
@@ -646,5 +703,6 @@ code problem.
 
 | Date | Change |
 | --- | --- |
+| 2026-08-13 | Code review (3 parallel layers) — 3 decisions resolved, 10 patches applied, 5 deferred, 6 dismissed. Headline: the AD-1 guard was blind to `from <pkg> import <submodule>` (`from . import youtube`, `from organizer import youtube`, `from django import http` all passed green); `_imported_modules` now yields submodule candidates and the fix is proven to bite. Coverage widened to `youtube_organizer/`, baseline re-measured 53% → **59%**. `api/` now forbidden from `organizer.models`/`django.db`. Suite still 7 tests green, container and host. |
 | 2026-08-12 | Implemented — layered packages with contract docstrings, `models.py`/`tests.py` → packages, `views.py` → `api/`, AST layering guard (proven to fail on a real violation), coverage harness measuring 53% baseline, CI reports coverage without a threshold. 7 tests green. AD-1, AD-16. |
 | 2026-08-12 | Story created — layered package skeleton, `models.py`/`tests.py` → packages, `views.py` → `api/`, AST layering guard, coverage harness wired into CI as a report. AD-1, AD-16. |

@@ -15,12 +15,20 @@ ORGANIZER = pathlib.Path(__file__).resolve().parent.parent
 FORBIDDEN = {
     "services": ("rest_framework", "organizer.youtube", "django.http", "django.urls"),
     "youtube": ("organizer.models", "organizer.services", "django.db"),
-    "api": ("organizer.youtube",),
+    # organizer.models / django.db: AD-1 makes organizer.services the only writer of
+    # application state, so a view reaching the ORM directly bypasses the whole rule.
+    "api": ("organizer.youtube", "organizer.models", "django.db"),
 }
 
 
 def _imported_modules(tree):
     """Yield (lineno, dotted_path) for every import, resolving relative ones.
+
+    For `from X import a, b` both the package path `X` and each candidate submodule
+    path `X.a` / `X.b` are yielded. Without the submodule candidates the guard is
+    blind to `from . import youtube`, `from organizer import youtube` and
+    `from django import http` — the plainest spellings of the violations it exists
+    to catch, since their `node.module` is only `organizer` / `django`.
 
     Relative resolution is deliberately coarse: `from .x import y` inside a layer
     package maps to `organizer.x`. That is correct for the single level of nesting
@@ -32,9 +40,13 @@ def _imported_modules(tree):
                 yield node.lineno, alias.name
         elif isinstance(node, ast.ImportFrom):
             if node.level:  # from . / .. import x
-                yield node.lineno, f"organizer.{node.module or ''}".rstrip(".")
+                base = f"organizer.{node.module or ''}".rstrip(".")
             else:
-                yield node.lineno, node.module or ""
+                base = node.module or ""
+            yield node.lineno, base
+            for alias in node.names:
+                if alias.name != "*":
+                    yield node.lineno, f"{base}.{alias.name}" if base else alias.name
 
 
 def _violates(module, forbidden_prefix):
@@ -53,10 +65,17 @@ class LayerDependencyDirectionTests(SimpleTestCase):
                 f"organizer/{layer}/ does not exist — the layer skeleton is incomplete (AD-1).",
             )
             for path in sorted(layer_dir.rglob("*.py")):
-                tree = ast.parse(path.read_text(), filename=str(path))
+                # encoding is explicit: under a C/POSIX locale the default would be
+                # ASCII and a single non-ASCII byte would crash the guard instead of
+                # reporting a verdict.
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+                # One import statement yields several candidate paths (see
+                # _imported_modules), so report at most one violation per line.
+                reported = set()
                 for lineno, module in _imported_modules(tree):
                     for bad in forbidden:
-                        if _violates(module, bad):
+                        if _violates(module, bad) and lineno not in reported:
+                            reported.add(lineno)
                             violations.append(
                                 f"{path.relative_to(ORGANIZER)}:{lineno} imports "
                                 f"'{module}' — forbidden in organizer/{layer}/ (AD-1)."
@@ -75,6 +94,19 @@ class LayerDependencyDirectionTests(SimpleTestCase):
             ("from .youtube import client", "services", "organizer.youtube"),
             ("from organizer.services import x", "youtube", "organizer.services"),
             ("from django.db import models", "youtube", "django.db"),
+            # `from <package> import <submodule>`: node.module is only "organizer" /
+            # "django", so these are invisible unless the alias names are inspected.
+            ("from . import youtube", "services", "organizer.youtube"),
+            ("from .. import youtube", "services", "organizer.youtube"),
+            ("from organizer import youtube", "services", "organizer.youtube"),
+            ("from django import http", "services", "django.http"),
+            ("from django import urls", "services", "django.urls"),
+            ("from organizer import models", "youtube", "organizer.models"),
+            ("from django import db", "youtube", "django.db"),
+            # AD-1: the api layer may not reach the ORM directly — services is the
+            # only writer of application state.
+            ("from organizer.models import UserSocialToken", "api", "organizer.models"),
+            ("from django.db import transaction", "api", "django.db"),
         ]
         for source, layer, expected in cases:
             with self.subTest(source=source):
@@ -90,6 +122,11 @@ class LayerDependencyDirectionTests(SimpleTestCase):
             ("from organizer.services import tagging", "api"),
             ("from .models import UserSocialToken", "services"),
             ("import googleapiclient.discovery", "youtube"),
+            # The submodule candidates must not turn every `from X import name` into
+            # a false positive: only the dotted path matters, not the bound symbol.
+            ("from rest_framework.views import APIView", "api"),
+            ("from django.conf import settings", "services"),
+            ("from organizer.services.tagging import apply_tags", "api"),
         ]
         for source, layer in allowed:
             with self.subTest(source=source):
