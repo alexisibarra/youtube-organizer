@@ -34,8 +34,11 @@
 > **Still deferred — omitted from `ci.yml` on purpose, not forgotten:**
 > - **Frontend test job + the 70% coverage gate** — story 2-5 lands the Jest/RTL/`axios-mock-adapter`
 >   harness. Until then there is nothing to run, and Epic 2 deletes the legacy code it would cover.
-> - **Backend coverage** — the suite arrives with story 1-2's test runner; `manage.py test` runs today
->   against an empty suite so the job is real and green.
+> - **Backend coverage threshold** — the *harness* landed with story 1-2 (coverage.py, `backend/.coveragerc`,
+>   `coverage run manage.py test` + `coverage report` in the `test` job), measuring a real suite over both
+>   `organizer/` and `youtube_organizer/`. Only the 70% `fail_under` is deferred, to story **1-4**: the
+>   measurable surface is dominated by `google_auth_views.py`, so 70% is not honestly reachable until
+>   1-4's cookie-auth `APITestCase` exists, and a threshold nothing can meet is a stub by another name.
 > - **The AD-3 schema/type drift gate** — story 3-4, once 3-1 and 3-3 provide the codegen.
 >
 > None of these are stubbed as `continue-on-error`: a permanently-yellow check trains people to

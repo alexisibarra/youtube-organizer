@@ -1,11 +1,25 @@
 # Makefile for the whole YouTube Organizer app (backend + frontend)
 
-.PHONY: backend-migrate frontend-install frontend-dev up
+.PHONY: backend-migrate backend-test backend-coverage frontend-install frontend-dev up
 
 # --- Backend targets ---
 
 backend-migrate:
 	docker-compose exec backend python manage.py migrate
+
+backend-test:
+	docker-compose exec backend python manage.py test --noinput
+
+# Measures only; the 70% threshold (NFR-13) is not enforced yet — see
+# .github/workflows/ci.yml and story 1-4.
+#
+# `coverage` is installed into the image, and ./backend is bind-mounted over /app —
+# so pulling a commit that adds a requirement does NOT install it in a container
+# built earlier. If this dies with "executable file not found", rebuild:
+#   docker-compose build backend && docker-compose up -d backend
+backend-coverage:
+	docker-compose exec backend coverage run manage.py test --noinput
+	docker-compose exec backend coverage report
 
 # --- Frontend targets ---
 

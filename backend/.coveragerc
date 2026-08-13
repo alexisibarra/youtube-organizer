@@ -1,0 +1,20 @@
+[run]
+# Both packages, not just organizer/: youtube_organizer/ holds middleware.py (the JWT
+# cookie middleware story 1-4 retires), settings.py and the project urls.py. Measuring
+# only organizer/ would let the NFR-13 gate describe a subset of the backend, and code
+# could escape it simply by living in the project package.
+source =
+    organizer
+    youtube_organizer
+# NFR-13's gate is stated over lines/statements/functions/branches. Turning branch
+# coverage on later would move the measured number under the gate's feet, so it is
+# on from the first measurement.
+branch = True
+omit =
+    */migrations/*
+    */tests/*
+    */__pycache__/*
+
+[report]
+show_missing = True
+skip_covered = False

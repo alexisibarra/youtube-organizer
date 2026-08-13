@@ -245,8 +245,11 @@ export default MyComponent;
 - **No paths filter** — every push/PR to `main`/`develop` runs all four jobs. Deliberate: GitHub reports
   no status for a filtered-out job, so path filters + required status checks = permanently unmergeable
   docs-only PRs. Do not "optimize" this back.
-- **Coverage gate: 70%** is the standing intent but is **not enforced yet** — no harness exists.
-  Frontend arrives with story 2-5, backend with 1-2, the AD-3 drift gate with 3-4. Each is a named
+- **Coverage gate: 70%** is the standing intent and is **not enforced yet**. The *backend harness*
+  landed with story 1-2 — coverage.py, `backend/.coveragerc` (branch coverage on, sourcing both
+  `organizer/` and `youtube_organizer/`), and CI measuring on every run — but the `fail_under`
+  threshold is deferred to story **1-4**, where the cookie-auth `APITestCase` makes 70% reachable.
+  The frontend harness arrives with story 2-5, the AD-3 drift gate with 3-4. Each is a named
   TODO in `ci.yml`; none is stubbed as `continue-on-error`.
   Every story PR must still include tests mapping to its acceptance criteria.
 

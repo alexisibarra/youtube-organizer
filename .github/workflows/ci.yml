@@ -8,7 +8,11 @@ name: CI
 # Deliberately NOT here yet, each waiting on the story that creates its tooling.
 # Add them when their tooling lands — do not stub them as continue-on-error.
 #   TODO(story 2-5): frontend test job + 70% coverage gate (Jest/RTL/axios-mock-adapter harness)
-#   TODO(story 1-2): backend coverage gate, once the layered package skeleton lands a test runner
+#   TODO(story 1-4): backend 70% coverage threshold (fail_under). The harness — coverage.py,
+#                    .coveragerc and the measuring steps in the test job — landed with story 1-2;
+#                    only the threshold is deferred, because the measurable organizer/ surface is
+#                    dominated by google_auth_views.py and 70% is not honestly reachable until
+#                    1-4's cookie-auth APITestCase exists. A threshold nothing can meet is a stub.
 #   TODO(story 3-4): OpenAPI schema/type drift gate (needs 3-1 + 3-3 codegen)
 #   TODO(AD-17): push-to-ghcr / deploy — deferred whole; deploy.yml is intentionally
 #                left non-functional until the production envelope lands as its own work
@@ -133,11 +137,16 @@ jobs:
         run: python manage.py migrate
 
       # Django builds its own test_* database from the credentials above.
-      # No coverage gate yet — the backend suite arrives with the layered
-      # package skeleton and test runner (story 1-2).
+      # coverage run, not a bare test run: the harness landed with story 1-2 and
+      # measures from here on. The report is informational — see the threshold
+      # TODO at the top of this file.
       - name: Run tests
         working-directory: backend
-        run: python manage.py test
+        run: coverage run manage.py test --noinput
+
+      - name: Coverage report
+        working-directory: backend
+        run: coverage report
 
   build:
     needs: [typecheck, test]
