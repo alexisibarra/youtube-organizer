@@ -206,9 +206,10 @@ mount, so pulling a new requirement does **not** install it in an already-built 
   - [x] Record the new coverage baseline in Completion Notes with the per-file breakdown for
         `organizer/auth/*`, and state the remaining distance to 70% so Story 1.4 inherits a true number.
   - [x] Paste the layering-guard failure output (Task 5's proof) into Debug Log References.
-  - [ ] PR body: map each test file to its AC (satisfies the per-PR test rule in
+  - [x] PR body: map each test file to its AC (satisfies the per-PR test rule in
         `project-context.md`), cite **AD-14** and **AD-1**, tick the applicable PR-template items and
         strike the rest (see "The PR template trap"). **No attribution trailers anywhere.**
+        Done — PR #15 → `develop`: https://github.com/alexisibarra/youtube-organizer/pull/15
 
 ### Review Findings
 
@@ -565,8 +566,11 @@ specified. The remaining misses are concentrated in `google_auth_views.py` and
 `youtube_organizer/middleware.py`, both of which 1.4 touches directly, so 1.4 inherits headroom
 rather than a deficit. **Do not turn `fail_under` on early**; it remains 1.4's to set.
 
-**Not done in this story (deliberate):** the PR body subtask under Task 6 is unticked because no PR
-has been opened yet — the work sits on `feat/story-1-3-pyjwt-token-module`, uncommitted.
+**PR.** #15 → `develop` (https://github.com/alexisibarra/youtube-organizer/pull/15), opened after the
+code review. All six pre-push layers ran green on the pinned Node (`v22.23.2`) rather than being
+bypassed. The PR body maps each test file to its AC, cites AD-14/AD-1/AD-16, and ticks the applicable
+PR-template items while striking the Accountr ones (nx/pnpm commands, Prisma DTOs, `HttpException`,
+money-as-string) instead of silently ticking them. No attribution trailers anywhere.
 
 ### File List
 
