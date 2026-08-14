@@ -10,13 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-# --- SimpleJWT Token Lifetime ---
-# Set access token to expire in 1 day (24 hours)
+# --- Access token lifetime (AD-14) ---
+# The single source of truth for how long an access token — and the cookie carrying
+# it — stays valid. Both `organizer/auth/tokens.py` (the `exp` claim) and the login
+# view's `set_cookie(max_age=...)` in `organizer/google_auth_views.py` read this one
+# value, so changing it here changes both. They used to be three unlinked constants.
+# `manage.py check` rejects a non-positive or non-timedelta value (organizer.E001).
 from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    # You can also set REFRESH_TOKEN_LIFETIME if needed
-}
+AUTH_JWT_ACCESS_LIFETIME = timedelta(days=1)
 
 from pathlib import Path
 
@@ -60,8 +61,6 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # must be at the top, before CommonMiddleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # --- JWT Cookie Middleware: enables DRF SimpleJWT to read JWT from HttpOnly cookie ---
-    'youtube_organizer.middleware.JWTAuthCookieMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -167,11 +166,20 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- DRF SimpleJWT configuration ---
-# Learning note: This configures Django REST Framework to use JWTs for authentication.
-# See: https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
+# --- DRF authentication and permission policy (AD-14) ---
+# One authenticator, reading the `access_token` HttpOnly cookie directly. There is
+# deliberately no SessionAuthentication "for the browsable API": it enforces CSRF on
+# unsafe methods, which would change the cross-port cookie contract this story is
+# sworn not to change (NFR-9).
+#
+# Views default to authenticated; `AllowAny` is explicit and justified where it
+# applies (today: the two OAuth entry points). A view that forgets
+# `permission_classes` now gets a locked endpoint rather than an open one.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'organizer.auth.authentication.CookieJWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
 }
