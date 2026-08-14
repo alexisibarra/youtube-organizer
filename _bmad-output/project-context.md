@@ -44,7 +44,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **Python 3.13 + Django `6.0.x`** (AD-14) — bump from 5.2; replace the unbounded `Django>=4.0` pin with a bounded one, and pin every requirement
 - **Django REST Framework `>=3.17.0`** — Django 6.0 support landed in 3.17.0. Endpoints are DRF class-based `APIView`s
-- ⚠️ **`djangorestframework-simplejwt` is DROPPED** (AD-14) — last release 5.5.1 (Jul 2025), no Django 6.0 support. Token issue/verify moves to a first-party `organizer/auth/` module over **PyJWT `2.13.0`**, exposed as one custom DRF authentication class that reads the cookie directly
+- ✅ **`djangorestframework-simplejwt` is GONE** (AD-14, done in story 1-4) — last release 5.5.1 (Jul 2025), no Django 6.0 support. Token issue/verify lives in the first-party `organizer/auth/` module over **PyJWT `2.13.0`** (`tokens.py`, `errors.py`), exposed as `organizer.auth.authentication.CookieJWTAuthentication` — DRF's sole default authenticator, reading the cookie directly. Do not reintroduce the package; `test_layering.py`'s `FORBIDDEN["auth"]` and `test_cookie_authentication.py`'s AST import scan both block it
 - **drf-spectacular `0.30.0`** — OpenAPI schema generation feeding the frontend type codegen (AD-3)
 - **PostgreSQL 15** via `psycopg2-binary`
 - **Google OAuth:** `google-auth`, `google-auth-oauthlib`, `google-auth-httplib2`, `google-api-python-client`
@@ -107,12 +107,20 @@ export default MyComponent;
 
 **Auth flow (the tricky part)**
 
-- Auth is JWT-in-HttpOnly-cookie, NOT header-based. Don't expect clients to send the header.
-  ⚠️ **The mechanism changes with AD-14:** today `JWTAuthCookieMiddleware`
-  (`youtube_organizer/middleware.py`) reads the `access_token` cookie and injects
-  `Authorization: Bearer <token>` before DRF. That global request mutation is **retired** along
-  with SimpleJWT — the new custom DRF authentication class reads the cookie itself.
-  **The cookie contract with the frontend is unchanged; only the backend implementation moves.**
+- Auth is JWT-in-HttpOnly-cookie, NOT header-based. Don't expect clients to send the header —
+  and note that header auth is now **actively dead**: a valid token in `Authorization: Bearer`
+  with no cookie is a 401, and there is a regression test saying so.
+  ✅ **The AD-14 swap is done (story 1-4).** `JWTAuthCookieMiddleware` and
+  `youtube_organizer/middleware.py` are **deleted** — the global mutation that copied the cookie
+  into `HTTP_AUTHORIZATION` for every request is gone. `CookieJWTAuthentication`
+  (`organizer/auth/authentication.py`) reads `request.COOKIES["access_token"]` itself, only on the
+  views DRF authenticates. **The cookie contract with the frontend did not move.**
+- ⚠️ **`authenticate_header()` is load-bearing, not decoration.** DRF coerces an auth failure to
+  **403** unless the first authenticator returns a `WWW-Authenticate` value. Removing that override
+  turns every 401 into a 403 with the whole suite still green, and the frontend's session probe
+  starts seeing a status it does not expect.
+- Views **default to authenticated** (`DEFAULT_PERMISSION_CLASSES = IsAuthenticated`). A new view
+  that declares no `permission_classes` is locked, not open — set `AllowAny` explicitly and justify it.
 - OAuth2 lives in `organizer/google_auth_views.py`, separate from `views.py`. The callback view
   is `AllowAny` (user isn't authenticated yet); it exchanges the code, upserts a Django `User`,
   logs in, mints JWTs, and stores Google tokens in `UserSocialToken` (OneToOne with User).
@@ -122,7 +130,9 @@ export default MyComponent;
 
 - Endpoints are DRF class-based `APIView`s (`.as_view()`), registered in `organizer/urls.py`.
 - All API routes are mounted under `/api/` (project `urls.py` includes `organizer.urls`).
-- Default auth class is `JWTAuthentication`; views default to authenticated — set
+- Default auth class is `organizer.auth.authentication.CookieJWTAuthentication` — exactly one entry,
+  and **do not add `SessionAuthentication`** "for the browsable API": it enforces CSRF on unsafe
+  methods and would change the cookie contract AD-14 protects. Views default to authenticated — set
   `permission_classes = [AllowAny]` explicitly for public endpoints.
 
 **Cross-origin / cookies (do not weaken)**
@@ -147,10 +157,14 @@ export default MyComponent;
 
 **Backend**
 
-- No test suite exists yet (`organizer/tests.py` is empty). New backend work should add
-  Django `APITestCase` (DRF) tests alongside the app.
-- Auth-dependent tests must simulate the cookie→header path or authenticate via SimpleJWT,
-  since `JWTAuthCookieMiddleware` is what populates the auth header.
+- A real suite lives in `organizer/tests/`, one `test_<subject>.py` per subject (discovery pattern
+  is `test*.py` — `foo_test.py` is silently never run). `SimpleTestCase` for DB-free structural
+  assertions, `TestCase` when the ORM is involved, `APITestCase` for the request path.
+- Auth-dependent tests set the cookie directly:
+  `self.client.cookies["access_token"] = issue_access_token(user)`. There is no header path to
+  simulate any more — mint via `organizer.auth.tokens`, never by hand.
+- **Coverage gate is live: `fail_under = 70` in `backend/.coveragerc`** (NFR-13). It fires in CI and
+  in `make backend-coverage`; the pre-push hook runs `manage.py test` bare, so it does not fire there.
 
 ### Code Quality & Style Rules
 
@@ -245,11 +259,14 @@ export default MyComponent;
 - **No paths filter** — every push/PR to `main`/`develop` runs all four jobs. Deliberate: GitHub reports
   no status for a filtered-out job, so path filters + required status checks = permanently unmergeable
   docs-only PRs. Do not "optimize" this back.
-- **Coverage gate: 70%** is the standing intent and is **not enforced yet**. The *backend harness*
-  landed with story 1-2 — coverage.py, `backend/.coveragerc` (branch coverage on, sourcing both
-  `organizer/` and `youtube_organizer/`), and CI measuring on every run — but the `fail_under`
-  threshold is deferred to story **1-4**, where the cookie-auth `APITestCase` makes 70% reachable.
-  The frontend harness arrives with story 2-5, the AD-3 drift gate with 3-4. Each is a named
+- **Backend coverage gate: 70% — LIVE since story 1-4.** The harness landed with story 1-2
+  (coverage.py, `backend/.coveragerc` with branch coverage on, sourcing both `organizer/` and
+  `youtube_organizer/`); 1-4's cookie-auth `APITestCase` took the total to 90% and turned
+  `fail_under = 70` on. `coverage report` exits non-zero by itself, so the CI step carries no flag
+  and the `ci.yml` TODO is gone. **It does not fire in `.githooks/pre-push`** — layer 6/6 runs
+  `manage.py test` bare. Use `make backend-coverage` to see where you stand before pushing.
+  70 is flat and deliberate, not a ratchet: raise it as a decision, never as a side effect.
+  Still deferred: the frontend harness (story 2-5) and the AD-3 drift gate (3-4). Each is a named
   TODO in `ci.yml`; none is stubbed as `continue-on-error`.
   Every story PR must still include tests mapping to its acceptance criteria.
 
@@ -282,7 +299,13 @@ export default MyComponent;
 **Auth invariants (don't silently break)**
 
 - Never switch auth to header-only — the whole app relies on the `access_token` HttpOnly cookie
-  + `JWTAuthCookieMiddleware`. Changing cookie names/flags breaks login end-to-end.
+  + `CookieJWTAuthentication`. Changing cookie names/flags breaks login end-to-end; the name has one
+  definition (`COOKIE_NAME` in `organizer/auth/authentication.py`) and both the mint site and the
+  authenticator read it from there.
+- **Cookie-borne auth has no CSRF defence, and that is tracked, not forgotten.** Header-borne JWT was
+  accidentally CSRF-immune; reading the cookie directly removes that accident. Nothing is exploitable
+  while every endpoint is a `GET` — **Epic 9 (mutation API) is where the defence belongs.** Do not
+  "fix" it by adding `SessionAuthentication`. See `deferred-work.md`.
 - Don't relax `SameSite=None; Secure` or `CORS_ALLOW_CREDENTIALS` — the cross-port OAuth flow needs them.
 
 **Security — not production-ready (must fix before deploy, don't assume it's safe)**

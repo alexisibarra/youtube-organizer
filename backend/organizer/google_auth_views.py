@@ -10,8 +10,8 @@ from .models import UserSocialToken
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 import requests
-# JWT imports
-from rest_framework_simplejwt.tokens import RefreshToken
+from .auth.authentication import COOKIE_NAME
+from .auth.tokens import access_lifetime, issue_access_token
 from django.shortcuts import redirect
 
 SCOPES = [
@@ -26,6 +26,11 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRE
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://localhost:8000/api/oauth2callback/')
 
 class GoogleAuthInitView(APIView):
+    # Explicit, not inherited (AD-14): the user is not logged in yet — this is the
+    # login entry point, and it is the one view the default-authenticated policy
+    # would otherwise lock.
+    permission_classes = [AllowAny]
+
     def get(self, request):
         flow = Flow.from_client_config(
             {
@@ -129,8 +134,7 @@ class GoogleAuthCallbackView(APIView):
         )
 
         # 6. Generate a JWT for the user
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
+        access_token = issue_access_token(user)
 
         # 7. Set the JWT as an HttpOnly, Secure cookie and redirect to the frontend
         # Learning note: HttpOnly cookies are not accessible via JavaScript, improving security.
@@ -138,12 +142,21 @@ class GoogleAuthCallbackView(APIView):
         response = redirect(frontend_url)
         # Set the cookie: HttpOnly, Secure, SameSite=None for cross-site usage
         response.set_cookie(
-            key='access_token',
+            # The constant, not the literal: this is the mint site and
+            # CookieJWTAuthentication is the consumer, so the name has exactly one
+            # definition. Changing it breaks every live session.
+            key=COOKIE_NAME,
             value=access_token,
             httponly=True,
             secure=True,
             samesite='None',
-            max_age=60*60*24,  # 1 day
+            # Same resolver as the token's own `exp` (AD-14), not a second read of
+            # the setting: `access_lifetime()` also applies the default when
+            # AUTH_JWT_ACCESS_LIFETIME is absent, so the cookie and the token it
+            # carries cannot drift apart even in the case the fallback exists for.
+            # Reading `settings.AUTH_JWT_ACCESS_LIFETIME` here would be an
+            # AttributeError mid-callback, after the user and Google tokens are saved.
+            max_age=int(access_lifetime().total_seconds()),
         )
         return response
 

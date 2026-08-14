@@ -34,12 +34,19 @@
 > **Still deferred — omitted from `ci.yml` on purpose, not forgotten:**
 > - **Frontend test job + the 70% coverage gate** — story 2-5 lands the Jest/RTL/`axios-mock-adapter`
 >   harness. Until then there is nothing to run, and Epic 2 deletes the legacy code it would cover.
-> - **Backend coverage threshold** — the *harness* landed with story 1-2 (coverage.py, `backend/.coveragerc`,
->   `coverage run manage.py test` + `coverage report` in the `test` job), measuring a real suite over both
->   `organizer/` and `youtube_organizer/`. Only the 70% `fail_under` is deferred, to story **1-4**: the
->   measurable surface is dominated by `google_auth_views.py`, so 70% is not honestly reachable until
->   1-4's cookie-auth `APITestCase` exists, and a threshold nothing can meet is a stub by another name.
 > - **The AD-3 schema/type drift gate** — story 3-4, once 3-1 and 3-3 provide the codegen.
+>
+> **No longer deferred:**
+> - **Backend coverage threshold — LIVE since story 1-4.** The *harness* landed with story 1-2
+>   (coverage.py, `backend/.coveragerc`, `coverage run manage.py test` + `coverage report` in the
+>   `test` job), measuring a real suite over both `organizer/` and `youtube_organizer/`. The 70%
+>   `fail_under` was deferred to story **1-4** because the measurable surface was dominated by
+>   `google_auth_views.py`; 1-4's cookie-auth `APITestCase` took the total to 90%, and
+>   `fail_under = 70` now lives under `[report]` in `backend/.coveragerc`. `coverage report` exits
+>   non-zero on its own, so the CI step needed no flag and there is no TODO left in `ci.yml`.
+>   The threshold is a flat 70, deliberately not a ratchet pinned to the measured figure.
+>   **It fires in CI and in `make backend-coverage`, not in `.githooks/pre-push`** — layer 6/6 runs
+>   `manage.py test` bare, so a green push still is not a green CI.
 >
 > None of these are stubbed as `continue-on-error`: a permanently-yellow check trains people to
 > ignore CI. Each is a TODO comment in `ci.yml` naming its story.

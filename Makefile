@@ -10,8 +10,10 @@ backend-migrate:
 backend-test:
 	docker-compose exec backend python manage.py test --noinput
 
-# Measures only; the 70% threshold (NFR-13) is not enforced yet — see
-# .github/workflows/ci.yml and story 1-4.
+# Measures and enforces: `fail_under = 70` lives in backend/.coveragerc (NFR-13,
+# live since story 1-4), so `coverage report` exits non-zero when the total drops
+# below it — here and in CI. The pre-push hook does NOT run coverage: layer 6/6 is
+# `manage.py test` bare, so use this target (or CI) to know where you stand.
 #
 # `coverage` is installed into the image, and ./backend is bind-mounted over /app —
 # so pulling a commit that adds a requirement does NOT install it in a container

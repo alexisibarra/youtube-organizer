@@ -23,7 +23,7 @@ from organizer.auth.errors import (
     TokenUserError,
 )
 from organizer.auth.tokens import (
-    _access_lifetime,
+    access_lifetime,
     get_user_from_claims,
     issue_access_token,
     verify_access_token,
@@ -82,7 +82,7 @@ class IssueAndVerifyRoundTripTests(TestCase):
         """
         claims = verify_access_token(issue_access_token(self.user))
         self.assertEqual(
-            claims["exp"] - claims["iat"], int(_access_lifetime().total_seconds())
+            claims["exp"] - claims["iat"], int(access_lifetime().total_seconds())
         )
 
     @override_settings(AUTH_JWT_ACCESS_LIFETIME=timedelta(minutes=5))
@@ -294,38 +294,54 @@ class IssueGuardTests(TestCase):
             issue_access_token(AnonymousUser())
 
 
-class SimpleJWTCompatibilityTests(TestCase):
-    """A token minted by the code running in production today must verify here.
+class LegacyWireFormatTests(TestCase):
+    """Live cookies minted by the retired code must keep working after the swap.
 
-    Story 1.4 swaps `RefreshToken.for_user` for `issue_access_token`; if that swap
-    invalidated the 1-day cookies in flight, every live session would be logged out.
+    Story 1.4 removed `djangorestframework-simplejwt`, so the legacy token is
+    hand-minted here rather than produced by the library. This is the payload
+    SimpleJWT 5.5.1 writes for an access token: `user_id` cast to `str`
+    (tokens.py:228), `token_type: "access"`, a `jti`, `iat`/`exp`, signed HS256 with
+    `settings.SECRET_KEY`.
 
-    DELETED BY STORY 1.4, together with the djangorestframework-simplejwt
-    dependency. This is the only place in the repo that may import SimpleJWT for
-    this purpose, and it lives in tests/ — organizer/auth/ stays clean (AC3).
+    Do **not** "simplify" this into `issue_access_token`: that mints the `int` form,
+    which is the very distinction this test exists to make. Every `access_token`
+    cookie in flight at merge time carries the string form and stays valid for a full
+    day; without this test the suite goes green over the one regression that would log
+    every user out — and it would not surface until the next day.
+
+    Replaces `SimpleJWTCompatibilityTests`, which proved the same property at the cost
+    of the dependency this story removes. The rollback direction that suite also
+    covered (SimpleJWT reading our token) is gone with the library and cannot be
+    asserted without reinstalling it; the claim-shape test below is what remains of it.
     """
 
     def setUp(self):
-        self.user = User.objects.create_user(username="compat", password="x")
+        self.user = User.objects.create_user(username="legacy-wire", password="x")
 
-    def test_simplejwt_access_token_verifies_and_resolves_the_same_user(self):
-        from rest_framework_simplejwt.tokens import RefreshToken
+    def _mint_legacy(self, **overrides):
+        now = timezone.now()
+        payload = {
+            "token_type": "access",
+            "exp": now + timedelta(days=1),
+            "iat": now,
+            "jti": "0123456789abcdef0123456789abcdef",
+            "user_id": str(self.user.pk),  # the str cast is the whole point
+        }
+        payload.update(overrides)
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
-        legacy = str(RefreshToken.for_user(self.user).access_token)
-        claims = verify_access_token(legacy)
+    def test_legacy_token_verifies_and_resolves_the_same_user(self):
+        claims = verify_access_token(self._mint_legacy())
         self.assertEqual(claims["token_type"], "access")
         self.assertEqual(get_user_from_claims(claims).pk, self.user.pk)
 
     def test_legacy_string_user_id_is_normalized_to_int_on_the_way_out(self):
-        """SimpleJWT 5.5.1 casts user_id to str unconditionally (tokens.py:228).
+        """The wire carries "7"; verification hands the caller 7.
 
-        The wire carries "7"; verification hands the caller 7. Asserting both
-        halves pins the normalization — without it, 1.4 sees two claim types
-        across the fleet for the full 1-day cookie window.
+        Asserting both halves pins the normalization — without it there are two claim
+        types across the fleet for the full 1-day cookie window.
         """
-        from rest_framework_simplejwt.tokens import RefreshToken
-
-        legacy = str(RefreshToken.for_user(self.user).access_token)
+        legacy = self._mint_legacy()
         self.assertIsInstance(_decode_segment(legacy.split(".")[1])["user_id"], str)
 
         legacy_claims = verify_access_token(legacy)
@@ -333,24 +349,8 @@ class SimpleJWTCompatibilityTests(TestCase):
         self.assertEqual(legacy_claims["user_id"], self.user.pk)
         self.assertEqual(get_user_from_claims(legacy_claims).pk, self.user.pk)
 
-    def test_simplejwt_accepts_our_token(self):
-        """The rollback direction, which the swap needs just as much.
-
-        During the 1.4 deploy — and on any rollback to the current revision —
-        the live JWTAuthCookieMiddleware hands cookies to SimpleJWT. If SimpleJWT
-        cannot read what issue_access_token minted, rolling back logs everyone
-        out, which is the same outage the forward test exists to prevent.
-        """
-        from rest_framework_simplejwt.tokens import AccessToken
-
-        accepted = AccessToken(issue_access_token(self.user))
-        self.assertEqual(accepted["token_type"], "access")
-        self.assertEqual(int(accepted["user_id"]), self.user.pk)
-
-    def test_our_claim_shape_matches_simplejwts(self):
-        from rest_framework_simplejwt.tokens import RefreshToken
-
-        legacy = str(RefreshToken.for_user(self.user).access_token)
+    def test_our_claim_shape_matches_the_legacy_one(self):
+        legacy = self._mint_legacy()
         ours = issue_access_token(self.user)
         self.assertEqual(
             set(_decode_segment(legacy.split(".")[1])),

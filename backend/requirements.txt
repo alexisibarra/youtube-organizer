@@ -2,9 +2,6 @@ Django==6.0.8
 djangorestframework==3.18.0
 django-cors-headers==4.9.0
 drf-spectacular==0.30.0
-# TEMPORARY — removed in Story 1.4 when the first-party PyJWT auth lands (AD-14).
-# 5.5.1 (2025-07-21) is the last release; it does not classify Django 6.0 support.
-djangorestframework-simplejwt==5.5.1
 google-auth==2.56.3
 google-auth-oauthlib==1.4.0
 google-auth-httplib2==0.4.1

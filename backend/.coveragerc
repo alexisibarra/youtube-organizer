@@ -1,8 +1,9 @@
 [run]
-# Both packages, not just organizer/: youtube_organizer/ holds middleware.py (the JWT
-# cookie middleware story 1-4 retires), settings.py and the project urls.py. Measuring
-# only organizer/ would let the NFR-13 gate describe a subset of the backend, and code
-# could escape it simply by living in the project package.
+# Both packages, not just organizer/: youtube_organizer/ holds settings.py and the
+# project urls.py. (It used to hold middleware.py too — the JWT cookie middleware
+# story 1-4 retired.) Measuring only organizer/ would let the NFR-13 gate describe a
+# subset of the backend, and code could escape it simply by living in the project
+# package.
 source =
     organizer
     youtube_organizer
@@ -18,3 +19,22 @@ omit =
 [report]
 show_missing = True
 skip_covered = False
+# Default precision is 0, so 69.6% renders as "70" and passes a fail_under of 70 —
+# the gate would report the number it was set to reject. Two decimals removes the
+# rounding boundary.
+precision = 2
+# NFR-13's gate, live as of story 1-4 (Docs/CI-AND-GITHUB-GATES.md). `coverage report`
+# exits non-zero when the total falls below this, which is what fails CI — the
+# workflow's `Coverage report` step needs nothing added to it.
+#
+# It does NOT fire in .githooks/pre-push: layer 6/6 runs `manage.py test` bare, never
+# under `coverage`. That is deliberate — putting coverage in the hook slows every push
+# and would inherit the hook's skip paths (no venv, no database → exit 0), so the gate
+# would be silently absent exactly when it looked present. CI always has the service
+# container; a green push has never been a green CI.
+#
+# 70, deliberately, not the measured figure (90% at the time of writing). A ratchet
+# pinned to today's coverage fails the next honest refactor and gets raised or deleted
+# under deadline pressure; the gate's stated intent is 70. Raise it as a decision, not
+# as a side effect of a good week.
+fail_under = 70

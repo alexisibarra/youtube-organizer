@@ -1,13 +1,16 @@
 """Access-token issue and verification over PyJWT (AD-14).
 
-Ships unwired: Story 1.4 puts this behind a DRF authentication class, retires
-``JWTAuthCookieMiddleware``, and drops the third-party token dependency this
-module replaces. Until then the request path is unchanged.
+Wired as of Story 1.4: ``organizer.auth.authentication.CookieJWTAuthentication``
+is the sole consumer on the request path, ``JWTAuthCookieMiddleware`` is gone, and
+so is the third-party token dependency this module replaces. The one mint site is
+the OAuth callback in ``organizer/google_auth_views.py``.
 
-The claim set matches what SimpleJWT mints today (``user_id`` / ``token_type`` /
-``jti``, HS256 over ``settings.SECRET_KEY``) so the 1.4 swap does not invalidate
-the 1-day ``access_token`` cookies in flight. The claim names are a compatibility
-contract, not a style choice.
+The claim set matches what the retired library minted (``user_id`` / ``token_type``
+/ ``jti``, HS256 over ``settings.SECRET_KEY``) so the swap did not invalidate the
+1-day ``access_token`` cookies in flight. The claim names are a compatibility
+contract, not a style choice —
+``organizer/tests/test_auth_tokens.py::LegacyWireFormatTests`` is what keeps that
+true now that the library is no longer around to be compared against.
 
 Must never: contain domain logic, or let a PyJWT type appear in a public
 signature — callers depend on ``organizer.auth.errors``, not on the library.
@@ -19,6 +22,7 @@ from uuid import uuid4
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
 from .errors import ExpiredToken, InvalidToken, TokenUserError
@@ -38,17 +42,43 @@ REQUIRED_CLAIMS = ["exp", "iat", "token_type", "user_id"]
 DEFAULT_ACCESS_LIFETIME = timedelta(days=1)
 
 
-def _access_lifetime():
+def access_lifetime():
     """Resolve the lifetime per call, never at import.
+
+    **Public because it has a caller outside this module.** The login view's cookie
+    ``max_age`` reads it too (``organizer/google_auth_views.py``), so that the cookie
+    and the ``exp`` of the token it carries resolve the setting the same way —
+    including when the setting is absent and this default applies. A bare
+    ``settings.AUTH_JWT_ACCESS_LIFETIME`` at the mint site would be an
+    ``AttributeError``/500 mid-callback in exactly that case.
 
     A module-level ``getattr(settings, ...)`` is evaluated once at import, which
     makes ``override_settings`` a silent no-op — the expired-token test would then
     mint a *valid* token and fail pointing at the wrong file.
 
-    The default matches both ``SIMPLE_JWT.ACCESS_TOKEN_LIFETIME`` and the cookie's
-    ``max_age`` in ``google_auth_views.py``, so nothing needs adding to settings.py.
+    The ``getattr`` default is kept so the setting stays optional and
+    ``override_settings`` keeps working. ``DEFAULT_ACCESS_LIFETIME`` is therefore a
+    second copy of the number ``settings.py`` declares, and that is the price of the
+    fallback: it is the value used *only* when the setting is missing, which
+    ``organizer.E001`` reports as an error anyway.
+
+    :raises ImproperlyConfigured: the setting is not a ``timedelta``. An ``int``
+        used to raise a bare ``TypeError`` out of ``issue_access_token`` — a 500 on
+        the login path, blamed on the wrong module.
+
+    Sign is deliberately **not** checked here. A non-positive lifetime is an
+    operator error, caught by the ``organizer.E001`` system check; checking it at
+    runtime too would make
+    ``override_settings(AUTH_JWT_ACCESS_LIFETIME=timedelta(seconds=-10))`` — the
+    only way to mint an expired token for a test — impossible.
     """
-    return getattr(settings, "AUTH_JWT_ACCESS_LIFETIME", DEFAULT_ACCESS_LIFETIME)
+    lifetime = getattr(settings, "AUTH_JWT_ACCESS_LIFETIME", DEFAULT_ACCESS_LIFETIME)
+    if not isinstance(lifetime, timedelta):
+        raise ImproperlyConfigured(
+            "AUTH_JWT_ACCESS_LIFETIME must be a datetime.timedelta, got "
+            f"{type(lifetime).__name__}"
+        )
+    return lifetime
 
 
 def _normalize_user_id(value):
@@ -85,7 +115,7 @@ def issue_access_token(user):
     now = timezone.now()  # aware UTC; datetime.utcnow() is naive and deprecated
     payload = {
         "token_type": ACCESS_TOKEN_TYPE,
-        "exp": now + _access_lifetime(),
+        "exp": now + access_lifetime(),
         "iat": now,
         "jti": uuid4().hex,
         "user_id": user.pk,
