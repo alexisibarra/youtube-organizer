@@ -1,5 +1,5 @@
 # generated: 2026-07-24T20:26:51-0400
-# last_updated: 2026-08-19T00:00:00-0400
+# last_updated: 2026-08-19T12:00:00-0400
 # project: youtube-organizer
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-24T20:26:51-0400
-last_updated: 2026-08-19T00:00:00-0400
+last_updated: 2026-08-19T12:00:00-0400
 project: youtube-organizer
 project_key: NOKEY
 tracking_system: file-system
@@ -49,13 +49,13 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   # Epic 1: Backend platform
-  epic-1: in-progress
+  epic-1: done
   1-1-upgrade-to-django-6-0-with-bounded-dependency-pins: done
   1-2-layered-backend-package-skeleton-and-test-runner: done
   1-3-first-party-pyjwt-token-issue-verify-module: done
   1-4-cookie-authentication-class-and-middleware-retirement: done
   1-5-make-backup-target-named-volume-and-verified-restore: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: Frontend platform
   epic-2: backlog
@@ -211,3 +211,100 @@ action_items:
     notes: >-
       Deliberately not fixed in story 1-1: frontend files are Epic 2 per that story's scope
       table, and the change would put an unrelated fix in a dependency-pin PR.
+
+  - id: AI-2
+    status: open
+    severity: medium
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "Guard self-tests must include a case the detector does not yet handle"
+    detail: >-
+      Three stories shipped a guard whose self-test enumerated only forms the detector
+      already handled, so the meta-test was structurally incapable of failing and
+      ratified the blind spot instead of exposing it: 1-2's layering guard was blind to
+      `from . import youtube` / `from django import http`; 1-4's write guard was blind to
+      Django 6 async ORM (`await user.asave()`) and to a queryset held in a local;
+      1-5's `--single-transaction` assertion was a whole-file text search that passed on
+      the comment explaining the flag. Same root cause each time, recurring after it was
+      known.
+    proposed_fix: >-
+      Require at least one self-test case in a form the detector does NOT yet handle.
+      Add the line to the story DoD template; check 2-5's frontend harness against it first.
+    owner_epic: 2
+  - id: AI-3
+    status: open
+    severity: medium
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "'Prove it bites' is a required DoD line for every new guard"
+    detail: >-
+      The standing convention since 1-2 is to break a guard, run it, confirm the failure
+      names the right file, and revert — but it is a convention, not a gate. Story 1-5's
+      audit found two new guards with no prove-it-bites evidence while the DoD line was
+      already ticked.
+    proposed_fix: >-
+      Make it an explicit DoD line: no guard ships without a Debug Log entry recording the
+      break / run / confirm / revert cycle.
+    owner_epic: 2
+  - id: AI-4
+    status: open
+    severity: high
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "Authoritative docs must be updated in the same PR as the mechanism they describe"
+    detail: >-
+      `CLAUDE.md` makes `Docs/CI-AND-GITHUB-GATES.md` and `_bmad-output/project-context.md`
+      binding — they win over code on conflict. Both were found stale in the 1-2, 1-3 and
+      1-4 reviews: the CI doc asserted a coverage gate that did not exist, and
+      project-context.md documented SimpleJWT and JWTAuthCookieMiddleware as the live auth
+      mechanism after both were deleted. A binding document three stories out of date is a
+      wrong answer carrying authority.
+    proposed_fix: >-
+      Reviewer gate: any story changing a mechanism described in those files updates them in
+      the same PR. Success criteria — zero "authoritative doc is stale" findings across the
+      Epic 2 reviews.
+    owner_epic: 2
+  - id: AI-5
+    status: open
+    severity: medium
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "DoD lines must be runnable exactly as written; strike, never tick, an unsatisfiable one"
+    detail: >-
+      Four of five stories ticked a DoD line for a check that cannot produce that output,
+      under a header reading "verifiable, no self-reporting": 1-2's bare `python -c "import
+      organizer.api, ..."` raises ImproperlyConfigured; 1-4's `grep -rni simplejwt` is
+      unsatisfiable by that same story's Task 7; 1-5 had two lines that became false during
+      the patch pass; 1-1 used a `[~]` marker outside the document's own vocabulary. Each was
+      disclosed honestly in Completion Notes — the checkbox just was not amended.
+    proposed_fix: >-
+      Adopt 1-4's precedent as standing policy: strike the line through with the reason,
+      never tick it and explain in prose below.
+    owner_epic: 2
+  - id: AI-6
+    status: open
+    severity: high
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "Re-review the patched tree when a patch pass touches executable or destructive code"
+    detail: >-
+      Story 1-5's first patch pass introduced three regressions, two confirmed by running
+      them - a trap handler that resumed into the destructive pg_restore after SIGTERM and
+      exited 0; a guard hardening that blocked restoring into an empty database (the primary
+      AD-20 disaster-recovery scenario); and a window where a signal deleted a freshly
+      committed, verified backup while the script printed success. Only the second
+      adversarial pass caught them.
+    proposed_fix: >-
+      Make the second pass the documented default rather than an exception whenever a patch
+      pass touches executable code, especially shell and destructive paths.
+    owner_epic: 2
+  - id: AI-7
+    status: open
+    severity: high
+    raised_by: epic 1 retrospective (2026-08-19)
+    title: "Assign AI-1 to a specific Epic 2 story before that story is written"
+    detail: >-
+      AI-1 (the missing `credentials: "include"`) is owned by Epic 2 but by no story. Story
+      2-2 deletes `frontend/src` wholesale, so the fix must be carried into the rebuild as an
+      explicit acceptance criterion rather than assumed to vanish with the file. It is the
+      only login entry point for real users, and the reason story 1-4 had to be verified with
+      curl instead of by clicking Sign in.
+    proposed_fix: >-
+      Name AI-1 in an Epic 2 story's acceptance criteria before that story starts. Done when
+      login works by clicking Sign in.
+    owner_epic: 2
