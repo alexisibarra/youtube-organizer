@@ -13,7 +13,7 @@ _Generated: 2026-07-20 · Status: local-dev only; production path not yet define
 | Service | Image / Build | Port | Command | Notes |
 | --- | --- | --- | --- | --- |
 | `backend` | build `./backend` (`python:3.13-slim`) | 8000 | `runserver_plus … --cert-file … --key-file …` | HTTPS dev server (django-extensions) |
-| `db` | `postgres:15` | 5432 | — | volume `postgres_data` |
+| `db` | `postgres:15` | 5432 | — | volume `youtube-organizer_postgres_data` |
 | `frontend` | build `./frontend` (`node:20-alpine`) | 3000 | `next dev --experimental-https` | dev server |
 
 - Both app services mount self-signed certs from `backend/certs/` and `frontend/certs/`

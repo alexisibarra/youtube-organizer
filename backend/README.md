@@ -42,11 +42,20 @@ cp env.template .env
 
 Edit `.env` and ensure all PostgreSQL and Google OAuth2 variables are set for your environment.
 
-3. Start the services:
+3. Start the services — **from the repo root, not from `backend/`**:
 
 ```
-docker-compose up --build
+cd .. && make up
 ```
+
+There is exactly one compose file, at the repo root. `backend/docker-compose.yml` used to exist and
+was removed: it declared a *second* `postgres_data` volume against `postgres:16` while the real
+stack runs `postgres:15`, so running compose from this directory silently attached you to a
+different database on a different Postgres major. If you had been doing that, your data is in a
+volume named `backend_postgres_data` — it is untouched, and you can dump it out with a throwaway
+`postgres:16` container (same shape as the drill in
+[`Docs/development-guide.md` § Backups & Restore](../Docs/development-guide.md#backups--restore))
+before removing it.
 
 4. Run migrations (in a separate terminal):
 
@@ -56,17 +65,41 @@ docker-compose exec backend python manage.py migrate
 
 ## Notes
 
-- The database data is persisted in a Docker volume (`postgres_data`).
+- The database data is persisted in a Docker volume explicitly named
+  `youtube-organizer_postgres_data`. It is the app's sole home for the library after
+  import (AD-20), so **no routine command in this repo's operational files destroys it** — see
+  [`Docs/development-guide.md` § Backups & Restore](../Docs/development-guide.md#backups--restore).
 - The Django settings use environment variables for all DB credentials.
 - The default user/password is `postgres`/`postgres` for local development.
 
 ## Troubleshooting
 
 - If you change the database schema, always re-run migrations.
-- If you need to reset the database, remove the `postgres_data` volume:
+- If you need to reset the data, clear the tables without touching the volume — the schema
+  and migration history stay intact:
 
 ```
-docker-compose down -v
+docker-compose exec backend python manage.py flush --noinput
+```
+
+- If you genuinely need an empty database (a corrupt cluster, not a messy one), **back up
+  first** and restore afterwards. Never bring the stack down with the flag that also removes
+  volumes: it destroys `youtube-organizer_postgres_data`, and with it the library (AD-20).
+  Drop and recreate the *database* instead of removing the *volume* — same result, and the
+  volume (with every other database on it) survives:
+
+```
+make backup                       # first, always — and note the path it prints
+
+cd ..                             # compose lives at the repo root
+docker-compose stop backend       # nothing may hold a connection to it
+docker-compose exec -T db psql -U postgres -c "drop database youtube_organizer;"
+docker-compose exec -T db psql -U postgres -c "create database youtube_organizer;"
+docker-compose start backend
+make backend-migrate              # empty database, current schema
+
+# ...or put the library back instead of migrating from scratch:
+make restore FILE=backups/<the dump you just took>
 ```
 
 ---
