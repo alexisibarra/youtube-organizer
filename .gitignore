@@ -27,6 +27,11 @@ staticfiles/
 venv/
 ENV/
 
+# Database backups
+# A dump contains organizer_usersocialtoken — live Google OAuth refresh tokens — plus
+# every user row. It is a credential file, exactly like .env above. Never commit one.
+backups/
+
 # VSCode
 .vscode/
 

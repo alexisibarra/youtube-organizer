@@ -101,6 +101,11 @@ This project uses a **monorepo** structure with two main components:
 ### Useful Commands
 
 - `make frontend-dev` — Start frontend in development mode
+- `make backup` — Write a timestamped `pg_dump` of the library to `backups/`
+- `make restore FILE=backups/<dump>` — Restore a dump over the live database (asks first)
+
+Backups, and the restore drill that verifies them, are documented in
+[`Docs/development-guide.md` § Backups & Restore](Docs/development-guide.md#backups--restore).
 
 See the `Makefile` for more commands.
 
